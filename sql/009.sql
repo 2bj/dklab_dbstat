@@ -1,0 +1,1 @@
+ALTER TABLE item ADD COLUMN relative_to INTEGER;

@@ -1,0 +1,21 @@
+.message {
+	border: 1px dashed red;
+	width: 100%;
+	padding: 4px;
+	margin-bottom: 0.5em;
+}
+
+.comment {
+	color: #777777;
+	padding-left: 1em;
+}
+
+li {
+	margin-left: 1em;
+	padding: 0;
+}
+
+ul {
+	margin: 0;
+	padding: 0;
+}
