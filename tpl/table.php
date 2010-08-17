@@ -24,6 +24,9 @@
 		<?foreach ($group as $rowName => $row) {?>
 			<tr align="center" valign="middle" bgcolor="#FFFFFF" <?=$row['relative_name']? 'title="Relative to ' . $row['relative_name'] . '"' : ""?> >
 				<td nowrap="nowrap" align="left">
+					<?if (@$_SERVER['GATEWAY_INTERFACE']) {?>
+						<a href="<?=$base?>item.php?clone=<?=$row['item_id']?>" title="Clone this item"><img src="<?=$base?>static/clone.gif" width="10" height="10" border="0" /></a>&nbsp;
+					<?}?>
 					<b><a name="<?=$row['item_id']?>" style="text-decoration:none" href="<?=$base?>item.php?id=<?=$row['item_id']?>"><?=strlen($groupName)? $groupName . "/" : ""?><?=$rowName?></a></b>&nbsp;
 				</td>
 				<td><?=$row['total']?></td>

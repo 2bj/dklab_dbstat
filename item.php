@@ -60,6 +60,9 @@ if (!empty($_POST['doSave']) || !empty($_POST['doTest']) || !empty($_POST['doRec
 	$_POST['item'] = array();
 	if ($id) {
 		$_POST['item'] = $DB->selectRow("SELECT * FROM item WHERE id=?", $id);
+	} else if (@$_GET['clone']) {
+		$_POST['item'] = $DB->selectRow("SELECT * FROM item WHERE id=?", $_GET['clone']);
+		unset($_POST['item']['id']); // very important!
 	} else {
 		$_POST['item']['sql'] = "SELECT COUNT(*)\nFROM some_table\nWHERE created BETWEEN \$FROM AND \$TO\n";
 	}
