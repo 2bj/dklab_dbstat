@@ -465,12 +465,6 @@ function recalcItemRow($itemId, $to, $back, $period)
 	global $DB;
 	$series = getTimeSeries($to, $back, $period);
 	$item = $DB->selectRow("SELECT * FROM item WHERE id=?", $itemId);
-	if (!$item['recalculatable']) {
-		if (trunkTime(time()) != trunkTime($to)) {
-			throw new Exception("Item \"{$item['name']}\" cannot be recalculated to the past");
-		}
-		array_splice($series, 0, 1);
-	}
 	foreach ($series as $interval) {
 		recalcItemCell($item, $interval);
 	}
@@ -481,7 +475,15 @@ function recalcItemCell($item, $interval)
 {
 	global $DB;
 	try {
+		$t0 = microtime(true); // for catch {} block
 		writeLogLine("[" . preg_replace('/\s+/s', ' ', $interval['caption']) . "] \"{$item['name']}\" " . sprintf("%-13s", strtolower($interval['periodCaption']) . "..."));
+		// Test if we could calculate this item.
+		if (!$item['recalculatable']) {
+			if (trunkTime(time()) != trunkTime($interval['to']) && trunkTime(trunkTime(time()) - 1) != trunkTime($interval['to'])) {
+				writeLogLine("skipped (cannot be recalculated to the past)\n");
+				return;
+			}
+		}
 		// Connect to the database with connection pooling.
 		$dsn = $DB->selectCell("SELECT value FROM dsn WHERE id=?", $item['dsn_id']);
 		static $dbs = array();
@@ -490,7 +492,7 @@ function recalcItemCell($item, $interval)
 		}
 		$db = $dbs[$dsn];
 		// Run the calculation.
-		$t0 = microtime(true);
+		$t0 = microtime(true); // refresh $t0 excluding connect time
 		$sql = $item['sql'];
 		$macros = array(
 			'TO'    => date("Y-m-d H:i:s", $interval['to']), // we do not trunk $to here
@@ -524,7 +526,13 @@ function writeLogLine($line, $noEscape = false)
 			$line = str_replace(" ", "&nbsp;", $line);
 			$line = nl2br($line);
 		}
-		$line .= '<script type="text/javascript">if (document.body) document.body.scrollTop = 100000000</script>';
+		$line .= '
+			<script type="text/javascript">
+			if (document.body && !window.sct) {
+				window.sct = setTimeout(function() { document.body.scrollTop=100000000; window.sct=null; }, 50);
+			}
+			</script>
+		';
 	}
 	echo $line;
 	if (ob_get_level()) ob_flush();
