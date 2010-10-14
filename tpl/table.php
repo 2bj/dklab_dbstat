@@ -26,7 +26,7 @@
 		<?foreach ($group as $rowName => $row) {?>
 			<tr 
 				id="<?=$row['item_id']?>"
-				<?=$row['archived']? 'style="display:none" class="archived"' : ''?> 
+				<?=$row['archived']? 'style="display:none" class="archived id' . $row['item_id'] . '"' : ''?> 
 				<?=$row['relative_name']? 'title="Relative to ' . $row['relative_name'] . '"' : ""?> 
 				align="center" valign="middle" bgcolor="#FFFFFF" 
 			>

@@ -111,7 +111,7 @@ function getPeriodMetadata($period)
 function template($__name, $__args = array(), $noLayout = false, $noQuote = false)
 {
 	if (!$noQuote) {
-		array_walk_recursive($__args, create_function('&$a', '$a = htmlspecialchars($a);'));
+		$__args = htmlspecialchars_recursive($__args);
 	}
 	extract($__args);
 	$__cwd = getcwd();
@@ -120,6 +120,25 @@ function template($__name, $__args = array(), $noLayout = false, $noQuote = fals
 	require "$__name.php";
 	if (!$noLayout) require "_footer.php";
 	chdir($__cwd);
+}
+
+function htmlspecialchars_recursive($a)
+{
+	if (is_array($a)) {
+		$r = array();
+		foreach ($a as $k => $v) {
+			$r[htmlspecialchars($k)] = htmlspecialchars_recursive($v);
+		}
+	} else if (is_object($a)) {
+		$r = new stdClass();
+		foreach ($a as $k => $v) {
+			$k = htmlspecialchars($k);
+			$r->$k = htmlspecialchars_recursive($v);
+		}
+	} else {
+		$r = htmlspecialchars($a);
+	}
+	return $r;
 }
 
 
@@ -243,7 +262,7 @@ function generateTableData($to, $back, $period, $onlyItemId = null)
 	$cells = $DB->select('
 			SELECT 
 				item.name, item.id AS item_id, item.archived AS archived,
-				c.id AS data_id, c.value, c.created,
+				c.id AS data_id, c.value, c.created, c.name AS data_name,
 				t.value AS total, 
 				r.value AS relative_value,
 				ri.name AS relative_name
@@ -258,14 +277,16 @@ function generateTableData($to, $back, $period, $onlyItemId = null)
 					t.item_id = item.id
 					AND t.created = c.created
 					AND t.period = \'total\'
+					AND t.name = c.name
+				)
+				LEFT JOIN item ri ON (
+					ri.id = item.relative_to
 				)
 				LEFT JOIN data r ON (
 					r.item_id = item.relative_to
 					AND r.created = c.created
 					AND r.period = c.period
-				)
-				LEFT JOIN item ri ON (
-					ri.id = item.relative_to
+					AND (ri.dim = 1 OR r.name = c.name)
 				)
 			WHERE 
 				1=1
@@ -279,6 +300,9 @@ function generateTableData($to, $back, $period, $onlyItemId = null)
 	$names = array();
 	foreach ($cells as $cell) {
 		$name = $cell['name'];
+		if ($cell['data_name']) {
+			$name .= "/" . $cell['data_name'];
+		}
 		if (!isset($names[$name])) {
 			$names[$name] = array();
 		}
@@ -319,8 +343,8 @@ function generateTableData($to, $back, $period, $onlyItemId = null)
 			$group = $m[1];
 			$name = $m[2];
 		}
-		$group = preg_replace('/^(\W*)\d+/s', '$1', $group);
-		$name = preg_replace('/^(\W*)\d+/s', '$1', $name);
+		$group = preg_replace('/^(\W*)\d+(\D+)/s', '$1$2', $group);
+		$name = preg_replace('/^(\W*)\d+(\D+)/s', '$1$2', $name);
 		$cell = current($cells);
 		$table[$group][$name] = array(
 			"total"         => false,
@@ -458,7 +482,7 @@ function validateItem($item)
 	if (!strlen(trim($item['sql']))) {
 		throw new Exception('SQL must be specified');
 	}
-	if (!strlen($item['relative_to'])) {
+	if (!$item['relative_to']) {
 		$item['relative_to'] = null;
 	}
 	$item['recalculatable'] = intval(@$item['recalculatable']);
@@ -483,6 +507,7 @@ function recalcItemCell($item, $interval)
 	try {
 		$t0 = microtime(true); // for catch {} block
 		writeLogLine("[" . preg_replace('/\s+/s', ' ', $interval['caption']) . "] \"{$item['name']}\" " . sprintf("%-13s", strtolower($interval['periodCaption']) . "..."));
+		
 		// Test if we could calculate this item.
 		if (!$item['recalculatable']) {
 			if (trunkTime(time()) != trunkTime($interval['to']) && trunkTime(trunkTime(time()) - 1) != trunkTime($interval['to'])) {
@@ -490,6 +515,7 @@ function recalcItemCell($item, $interval)
 				return;
 			}
 		}
+		
 		// Connect to the database with connection pooling.
 		$dsn = $DB->selectCell("SELECT value FROM dsn WHERE id=?", $item['dsn_id']);
 		static $dbs = array();
@@ -497,6 +523,7 @@ function recalcItemCell($item, $interval)
 			$dbs[$dsn] = new PDO_Simple($dsn);
 		}
 		$db = $dbs[$dsn];
+		
 		// Run the calculation.
 		$t0 = microtime(true); // refresh $t0 excluding connect time
 		$sql = $item['sql'];
@@ -509,12 +536,37 @@ function recalcItemCell($item, $interval)
 		foreach ($macros as $k => $v) {
 			$sql = str_replace('$' . $k, "'$v'", $sql);
 		}
-		$value = $db->selectCell($sql);
-		$DB->update('DELETE FROM data WHERE item_id=? AND period=? AND created=?', $item['id'], $interval['period'], $interval['to']);
-		$DB->update(
-			'INSERT INTO data(id, item_id, period, created, value) VALUES(?, ?, ?, ?, ?)',
-			$DB->getSeq(), $item['id'], $interval['period'], $interval['to'], $value
-		);
+		$rowset = $db->select($sql);
+		
+		// Parse single or column-returning result.
+		$values = array();
+		if ($item['dim'] == 1) {
+			$values = array("" => @current(current($rowset)));
+		} else {
+			foreach ($rowset as $i => $row) {
+				reset($row);
+				if (count($row) > 1) {
+					$key = current($row);
+					next($row);
+					$value = current($row);
+				} else {
+					$key = $i;
+					$value = current($row);
+				}
+				if (!strlen($key)) $key = '<empty>';
+				$values[$key] = $value;
+			}
+		}
+		
+		// Insert the data.
+		$DB->update('DELETE FROM data WHERE item_id=? AND period=? AND (created BETWEEN ? AND ?)', $item['id'], $interval['period'], $interval['from'] + 1, $interval['to']);
+		foreach ($values as $key => $value) {
+			$DB->update(
+				'INSERT INTO data(id, item_id, period, created, value, name) VALUES(?, ?, ?, ?, ?, ?)',
+				$DB->getSeq(), $item['id'], $interval['period'], $interval['to'], $value, $key
+			);
+		}
+		
 		$t1 = microtime(true);
 		writeLogLine("OK ($value); took " . sprintf("%d ms", ($t1 - $t0) * 1000) . "\n");
 	} catch (Exception $e) {

@@ -23,6 +23,15 @@
 	<td></td>
 	</tr>
 	<tr valign="top">
+	<td>Item type</td>
+	<td>
+		<select name="item[dim]" default="1">
+		<option value="1">Single value returned</option>
+		<option value="2">Column returned</option>
+		</select>
+	</td>
+	</tr>
+	<tr valign="top">
 	<td>SQL</td>
 	<td>
 		<textarea name="item[sql]" cols="90" rows="8"></textarea><br>
@@ -34,7 +43,6 @@
 		<input type="hidden" name="item[archived]" value="0" />
 		<input type="checkbox" id="archived" name="item[archived]" value="1" default="0" />
 		<label for="archived">Archived (hidden, but calculated)</label><br/>
-		
 	</td>
 	<td class="comment">
 		Available marcos are:
@@ -51,11 +59,12 @@
 		<input type="submit" name="doSave" value="<?=@$_POST['item']['id']? "Save" : "Add"?>"/>
 		<?if (@$_POST['item']['id']) {?>
 			<input type="submit" name="doDelete" confirm="Are you sure you want to delete this item?" value="Delete" style="margin-left:1em"/>
+			<input type="submit" name="doClear" confirm="Are you sure you want to clear all data for this item?" value="Clear" style="margin-left:1em"/>
 		<?}?>
 		<div style="float:right">
 			<input type="submit" name="doTest" value="Test" /> or
 			<input type="submit" name="doRecalc" value="Recalc" />
-			from <input type="text" name="to" size="8" default="now"/> back <input type="text" name="back" size="8" default="14"/>
+			from <input type="text" name="to" size="4" default="now"/> back <input type="text" name="back" size="4" default="14"/>
 			<select name="period"><option value="">- ALL -</option>SELECT_PERIODS</select> periods
 		</div>
 	</td>

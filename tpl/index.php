@@ -10,7 +10,7 @@
 </div>
 <script>
 if ($(".archived")[0]) $('#showHideDiv').show();
-if (location.hash.match(/^#(\d+)$/)) $('#' + RegExp.$1).show();
+if (location.hash.match(/^#(\d+)$/)) $('.id' + RegExp.$1).show();
 </script>
 
 <form method="get" action="recalc.php" style="margin-top:1em">

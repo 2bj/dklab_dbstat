@@ -7,7 +7,13 @@ $id = @$_GET['id']? @$_GET['id'] : @$_POST['item']['id'];
 
 if (!empty($_POST['doDelete'])) {
 	$DB->update("DELETE FROM item WHERE id=?", $id);
+	$DB->update("DELETE FROM data WHERE item_id=?", $id);
 	redirect("index.php", "Item deleted.");
+}
+
+if (!empty($_POST['doClear'])) {
+	$DB->update("DELETE FROM data WHERE item_id=?", $id);
+	redirect("item.php?id=" . urlencode($id), "Item data cleared.");
 }
 
 if (!empty($_POST['doSave']) || !empty($_POST['doTest']) || !empty($_POST['doRecalc'])) {
@@ -16,13 +22,13 @@ if (!empty($_POST['doSave']) || !empty($_POST['doTest']) || !empty($_POST['doRec
 		$item = validateItem($_POST['item']);
 		if (!$id) {
 			$DB->update(
-				"INSERT INTO item(id, name, sql, dsn_id, recalculatable, archived, created, modified, relative_to) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
-				$id = $DB->getSeq(), $item['name'], $item['sql'], $item['dsn_id'], $item['recalculatable'], $item['archived'], time(), time(), $item['relative_to']
+				"INSERT INTO item(id, name, sql, dsn_id, recalculatable, archived, dim, created, modified, relative_to) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				$id = $DB->getSeq(), $item['name'], $item['sql'], $item['dsn_id'], $item['recalculatable'], $item['archived'], $item['dim'], time(), time(), $item['relative_to']
 			);
  		} else {
 			$DB->update(
-				"UPDATE item SET name=?, sql=?, dsn_id=?, recalculatable=?, archived=?, modified=?, relative_to=? WHERE id=?",
-				$item['name'], $item['sql'], $item['dsn_id'], $item['recalculatable'], $item['archived'], time(), $item['relative_to'], $id
+				"UPDATE item SET name=?, sql=?, dsn_id=?, recalculatable=?, archived=?, dim=?, modified=?, relative_to=? WHERE id=?",
+				$item['name'], $item['sql'], $item['dsn_id'], $item['recalculatable'], $item['archived'], $item['dim'], time(), $item['relative_to'], $id
 			);
  		}
  		if (!empty($_POST['doSave'])) {
@@ -74,7 +80,11 @@ foreach ($DB->select("SELECT id, name FROM dsn ORDER BY name") as $row) {
 }
 
 $SELECT_ITEMS = array();
-foreach ($DB->select("SELECT id, name FROM item ORDER BY name") as $row) {
+$seenArchived = 0;
+foreach ($DB->select("SELECT id, name, archived FROM item ORDER BY archived, name") as $row) {
+	if (!$seenArchived && $row['archived']) {
+		$SELECT_ITEMS[0] = "";
+	}
 	$SELECT_ITEMS[$row['id']] = $row['name'];
 }
 
