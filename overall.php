@@ -251,16 +251,33 @@ function getPeriods()
  * @param int $period
  * @param int $from
  * @param int $to
- * @param int $onlyItemId
+ * @param mixed $onlyItemIds
+ * @param mixed $onlyDataNames
  * @return array  Array of groups of rows.
  */
-function generateTableData($to, $back, $period, $onlyItemId = null)
+function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNames = null)
 {
 	global $DB;
 	$meta = getPeriodMetadata($period);
 	$series = getTimeSeries($to, $back, $period);
 	$to = $series[0]["to"];
 	$from = $series[count($series) - 1]["from"];
+	$filterItem = "1=1";
+	if ($onlyItemIds) {
+		if (!is_array($onlyItemIds)) $onlyItemIds = explode(TAGS_SEP, $onlyItemIds);
+		$filterItem = "item.id IN(" . join(",", array_map("intval", $onlyItemIds)) . ")";
+		foreach ($onlyItemIds as $tag) {
+			$filterItem .= " OR item.tags LIKE " . $DB->quote('%' . TAGS_SEP . $tag . TAGS_SEP . '%');
+		}
+	}
+	$filterData = "1=1";
+	if ($onlyDataNames) {
+		if (!is_array($onlyDataNames)) $onlyDataNames = explode(TAGS_SEP, $onlyDataNames);
+		$filterData = "1=0";
+		foreach ($onlyDataNames as $dn) {
+			$filterData .= " OR c.name LIKE " . $DB->quote($dn);
+		}
+	}
 	$cells = $DB->select('
 			SELECT 
 				item.name, item.id AS item_id, item.archived AS archived,
@@ -274,6 +291,7 @@ function generateTableData($to, $back, $period, $onlyItemId = null)
 					c.item_id = item.id
 					AND ? <= c.created AND c.created <= ?
 					AND c.period = ?
+					AND (' . $filterData . ')
 				)
 				LEFT JOIN data t ON (
 					t.item_id = item.id
@@ -292,8 +310,7 @@ function generateTableData($to, $back, $period, $onlyItemId = null)
 				)
 			WHERE 
 				1=1
-				' . ($onlyItemId && is_numeric($onlyItemId)? ' AND item.id=' . intval($onlyItemId) : '') . '
-				' . ($onlyItemId && !is_numeric($onlyItemId)? " AND item.tags LIKE '%" . TAGS_SEP .  addslashes($onlyItemId) . TAGS_SEP . "%'" : "") . '
+				AND (' . $filterItem . ')
 			ORDER BY item.name, c.created DESC
 		',
 		$from, $to, $period
