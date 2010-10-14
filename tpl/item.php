@@ -1,3 +1,9 @@
+<?if (!$GLOBALS['SELECT_DSNS']) {?>
+	There are no databases yet configured.<br/>
+	<a href="dsns.php">Configure databases</a>
+	<?return?>
+<?}?>
+
 <form method="post">
 <input type="hidden" name="item[id]" />
 <table>
@@ -20,9 +26,15 @@
 	<td>SQL</td>
 	<td>
 		<textarea name="item[sql]" cols="90" rows="8"></textarea><br>
+
 		<input type="hidden" name="item[recalculatable]" value="0" />
 		<input type="checkbox" id="recalculatable" name="item[recalculatable]" value="1" default="1" />
-		<label for="recalculatable">Could be recalculated to the past</label>
+		<label for="recalculatable">Could be recalculated to the past</label><br/>
+
+		<input type="hidden" name="item[archived]" value="0" />
+		<input type="checkbox" id="archived" name="item[archived]" value="1" default="0" />
+		<label for="archived">Archived (hidden, but calculated)</label><br/>
+		
 	</td>
 	<td class="comment">
 		Available marcos are:

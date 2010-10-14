@@ -60,8 +60,13 @@ function createDbConnection()
 	}
 	foreach (glob("sql/*.sql") as $f) {
 		if (preg_match('/^(\d+)/s', basename($f), $m) && intval($m[1]) > intval($version)) {
-			$DB->exec("BEGIN; " . file_get_contents($f) . "; COMMIT;");
-			$DB->update("UPDATE version SET version=?", intval($m[1]));
+			$sql = file_get_contents($f);
+			try {
+				$DB->exec("BEGIN; " . $sql . "; COMMIT;");
+				$DB->update("UPDATE version SET version=?", intval($m[1]));
+			} catch (Exception $e) {
+				die("Exception: " . $e->getMessage() . "\n" . $sql);
+			}
 		}
 	}
 	return $DB;
@@ -237,7 +242,7 @@ function generateTableData($to, $back, $period, $onlyItemId = null)
 	$from = $series[count($series) - 1]["from"];
 	$cells = $DB->select('
 			SELECT 
-				item.name, item.id AS item_id, 
+				item.name, item.id AS item_id, item.archived AS archived,
 				c.id AS data_id, c.value, c.created,
 				t.value AS total, 
 				r.value AS relative_value,
@@ -323,6 +328,7 @@ function generateTableData($to, $back, $period, $onlyItemId = null)
 			"average_filled"=> 0,
 			"relative_name" => null,
 			"item_id"       => @$cell['item_id'],
+			"archived"      => @$cell['archived'],
 			"cells"         => array(),
 		);
 		$rr =& $table[$group][$name];

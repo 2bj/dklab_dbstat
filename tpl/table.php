@@ -19,15 +19,22 @@
 		<?}?>
 	</tr>
 </thead>
+
 <tbody>
+	<?$hasArchived = 0?>
 	<?$i = -1; foreach ($table['groups'] as $groupName => $group) { $i++; ?>
 		<?foreach ($group as $rowName => $row) {?>
-			<tr align="center" valign="middle" bgcolor="#FFFFFF" <?=$row['relative_name']? 'title="Relative to ' . $row['relative_name'] . '"' : ""?> >
+			<tr 
+				id="<?=$row['item_id']?>"
+				<?=$row['archived']? 'style="display:none" class="archived"' : ''?> 
+				<?=$row['relative_name']? 'title="Relative to ' . $row['relative_name'] . '"' : ""?> 
+				align="center" valign="middle" bgcolor="#FFFFFF" 
+			>
 				<td nowrap="nowrap" align="left">
 					<?if (@$_SERVER['GATEWAY_INTERFACE']) {?>
 						<a href="<?=$base?>item.php?clone=<?=$row['item_id']?>" title="Clone this item"><img src="<?=$base?>static/clone.gif" width="10" height="10" border="0" /></a>&nbsp;
 					<?}?>
-					<b><a name="<?=$row['item_id']?>" style="text-decoration:none" href="<?=$base?>item.php?id=<?=$row['item_id']?>"><?=strlen($groupName)? $groupName . "/" : ""?><?=$rowName?></a></b>&nbsp;
+					<b><a style="text-decoration:none" href="<?=$base?>item.php?id=<?=$row['item_id']?>"><?=strlen($groupName)? $groupName . "/" : ""?><?=strlen($rowName)? $rowName : "&lt;none&gt;"?></a></b>&nbsp;
 				</td>
 				<td><?=$row['total']?></td>
 				<td><?=$row['average']?></td>
@@ -55,8 +62,15 @@
 				<?}?>
 			</tr>
 		<?}?>
+		<?
+			$archivedGroup = 1; 
+			foreach ($group as $row) if (!$row['archived']) $archivedGroup = 0; else $hasArchived = 1;
+		?>
 		<?if ($i < count($table['groups']) - 1) {?>
-			<tr align="center" valign="middle" bgcolor="#FFFFFF">
+			<tr 
+				<?=$archivedGroup? 'style="display:none" class="archived"' : ''?>
+				align="center" valign="middle" bgcolor="#FFFFFF"
+			>
 				<?for ($n = 0; $n < count($table['captions']) + 4; $n++) {?>
 					<td height="10"><span></span></td>
 				<?}?>
@@ -65,3 +79,4 @@
 	<?}?>
 </tbody>
 </table>
+
