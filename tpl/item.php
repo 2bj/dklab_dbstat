@@ -14,7 +14,7 @@
 	</tr>
 	<tr valign="top">
 	<td>Name</td>
-	<td><input type="text" name="item[name]" size="50"/></td>
+	<td><input type="text" name="item[name]" size="90" style="width:100%"/></td>
 	<td class="comment">Separate aliases with ";".</td>
 	</tr>
 	<tr valign="top">
@@ -30,6 +30,11 @@
 		<option value="2">Column returned</option>
 		</select>
 	</td>
+	</tr>
+	<tr valign="top">
+	<td>Tags</td>
+	<td><input type="text" name="item[tags]" size="60" style="width:100%"/></td>
+	<td class="comment">Separate tags with space.</td>
 	</tr>
 	<tr valign="top">
 	<td>SQL</td>

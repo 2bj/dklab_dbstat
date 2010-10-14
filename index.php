@@ -7,7 +7,7 @@ setSetting("index_url", ($_SERVER['SERVER_PORT'] == 443? "https" : "http") . ":/
 
 list ($to, $back, $period) = parseToBackPeriod($_GET);
 
-$data = generateTableData($to, getSetting("cols", 30), $period); 
+$data = generateTableData($to, getSetting("cols", 30), $period, @$_GET['tag']); 
 $html = generateHtmlTableFromData($data);
 
 $SELECT_PERIODS = getPeriods();
@@ -18,6 +18,6 @@ template(
 	array(
 		"title" => ($name? $name . ": " : "") . $SELECT_PERIODS[$period] . " statistics for " . date("Y-m-d", trunkTime($to) - 1),
 		"to" => $to,
-		"htmlTable" => $html
+		"htmlTable" => $html,
 	)
 );

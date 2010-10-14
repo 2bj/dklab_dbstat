@@ -6,6 +6,8 @@ require_once "HTML/FormPersister.php";
 require_once "Mail/Simple.php";
 require_once "PDO/Simple.php";
 
+define("TAGS_SEP", "|");
+
 // Initialize environment.
 if (isCgi() && defined("USE_GZIP")) {
 	ob_start("ob_gzhandler");
@@ -290,7 +292,8 @@ function generateTableData($to, $back, $period, $onlyItemId = null)
 				)
 			WHERE 
 				1=1
-				' . ($onlyItemId? ' AND item.id=' . $onlyItemId : '') . '
+				' . ($onlyItemId && is_numeric($onlyItemId)? ' AND item.id=' . intval($onlyItemId) : '') . '
+				' . ($onlyItemId && !is_numeric($onlyItemId)? " AND item.tags LIKE '%" . TAGS_SEP .  addslashes($onlyItemId) . TAGS_SEP . "%'" : "") . '
 			ORDER BY item.name, c.created DESC
 		',
 		$from, $to, $period
@@ -435,7 +438,16 @@ function generateHtmlTableFromData($table)
 	}
 	$base = preg_replace("{/[^/]*$}s", "/", getSetting("index_url"));
 	ob_start();
-	template("table", array("table" => $table, "base" => $base, "period" => $period), true);
+	template(
+		"table", 
+		array(
+			"table" => $table, 
+			"base" => $base, 
+			"period" => $period,
+			"tags" => getAllTags(),
+		), 
+		true
+	);
 	$html = ob_get_clean();
 	$html = preg_replace('/\s+/s', ' ', $html);
 	$html = preg_replace('/\s*>\s*/s', '>', $html);
@@ -486,9 +498,39 @@ function validateItem($item)
 		$item['relative_to'] = null;
 	}
 	$item['recalculatable'] = intval(@$item['recalculatable']);
+	$item['tags'] = TAGS_SEP . join(TAGS_SEP, preg_split('/\s+/', trim($item['tags']))) . TAGS_SEP;
 	return $item;
 }
 
+function extractTags($string)
+{
+	$tags = explode(TAGS_SEP, $string);
+	$tags = array_filter($tags, 'trim');
+	$tags = array_map("trim", $tags);
+	return $tags;
+}
+
+function fetchItem($id)
+{
+	global $DB;
+	$item = $DB->selectRow("SELECT * FROM item WHERE id=?", $id);
+	$item['tags'] = trim(join(" ", extractTags($item['tags'])));
+	return $item;
+}
+
+function getAllTags()
+{
+	global $DB;
+	$rows = $DB->select("SELECT tags FROM item");
+	$tags = array();
+	foreach ($rows as $row) {
+		foreach (array_unique(extractTags($row['tags'])) as $t) {
+			$tags[$t] = @$tags[$t] + 1;
+		}
+	}
+	ksort($tags);
+	return $tags;
+}
 
 function recalcItemRow($itemId, $to, $back, $period)
 {
@@ -619,7 +661,7 @@ function parseToBackPeriod($arr, $wholeIntervalByDefault = false)
 			$to = time();
 		}
 	}
-	$period = isset($arr['period'])? $arr['period'] : 'day';
+	$period = strlen(@$arr['period'])? $arr['period'] : 'day';
 	$back = @$arr['back']? $arr['back'] : getSetting("cols", 30);
 	return array($to, $back, $period);
 }

@@ -22,13 +22,13 @@ if (!empty($_POST['doSave']) || !empty($_POST['doTest']) || !empty($_POST['doRec
 		$item = validateItem($_POST['item']);
 		if (!$id) {
 			$DB->update(
-				"INSERT INTO item(id, name, sql, dsn_id, recalculatable, archived, dim, created, modified, relative_to) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-				$id = $DB->getSeq(), $item['name'], $item['sql'], $item['dsn_id'], $item['recalculatable'], $item['archived'], $item['dim'], time(), time(), $item['relative_to']
+				"INSERT INTO item(id, name, sql, dsn_id, recalculatable, archived, dim, tags, created, modified, relative_to) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				$id = $DB->getSeq(), $item['name'], $item['sql'], $item['dsn_id'], $item['recalculatable'], $item['archived'], $item['dim'], $item['tags'], time(), time(), $item['relative_to']
 			);
  		} else {
 			$DB->update(
-				"UPDATE item SET name=?, sql=?, dsn_id=?, recalculatable=?, archived=?, dim=?, modified=?, relative_to=? WHERE id=?",
-				$item['name'], $item['sql'], $item['dsn_id'], $item['recalculatable'], $item['archived'], $item['dim'], time(), $item['relative_to'], $id
+				"UPDATE item SET name=?, sql=?, dsn_id=?, recalculatable=?, archived=?, dim=?, tags=?, modified=?, relative_to=? WHERE id=?",
+				$item['name'], $item['sql'], $item['dsn_id'], $item['recalculatable'], $item['archived'], $item['dim'], $item['tags'], time(), $item['relative_to'], $id
 			);
  		}
  		if (!empty($_POST['doSave'])) {
@@ -65,9 +65,9 @@ if (!empty($_POST['doSave']) || !empty($_POST['doTest']) || !empty($_POST['doRec
 } else {
 	$_POST['item'] = array();
 	if ($id) {
-		$_POST['item'] = $DB->selectRow("SELECT * FROM item WHERE id=?", $id);
+		$_POST['item'] = fetchItem($id);
 	} else if (@$_GET['clone']) {
-		$_POST['item'] = $DB->selectRow("SELECT * FROM item WHERE id=?", $_GET['clone']);
+		$_POST['item'] = fetchItem($_GET['clone']);
 		unset($_POST['item']['id']); // very important!
 	} else {
 		$_POST['item']['sql'] = "SELECT COUNT(*)\nFROM some_table\nWHERE created BETWEEN \$FROM AND \$TO\n";

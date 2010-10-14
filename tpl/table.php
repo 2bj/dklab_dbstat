@@ -1,5 +1,18 @@
 <?$COLORS = array("holiday" => "red", "incomplete" => "#BBBBBB")?>
 
+<?if ($tags) {?>
+	<div style="margin-bottom:3px">
+	Tags:&nbsp;&nbsp;
+	<?foreach ($tags as $tag => $cnt) {?>
+		<?$tag = htmlspecialchars_decode($tag)?>
+		<a 
+			style="text-decoration:none; <?=@$_GET['tag'] == $tag? 'font-weight:bold' : ''?>" 
+			href="<?=$base?>index.php?tag=<?=urlencode(htmlspecialchars_decode($tag))?>&period=<?=urlencode(@$_GET['period'])?>&to=<?=urlencode(@$_GET['to'])?>"
+		><?=$tag?></a><sup style="color:gray"><?=$cnt?></sup>&nbsp;&nbsp;
+	<?}?>
+	</div>
+<?}?>
+
 <table cellpadding="3" cellspacing="1" border="0" bgcolor="#CCCCCC">
 <thead bgcolor="#EEEEEE">
 	<tr align="center" valign="top">
