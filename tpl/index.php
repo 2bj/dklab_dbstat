@@ -1,9 +1,10 @@
 <form method="get">
+<input type="hidden" name="tag" />
 <input type="submit" value="Show" />
 <select name="period" onchange="this.form.submit()">$SELECT_PERIODS</select> data from <input type="text" name="to" size="8" default="now"/>
 </form>
 
-<?=htmlspecialchars_decode($htmlTable)?>
+<?=unhtmlspecialchars($htmlTable)?>
 <div style="display:none" id="showHideDiv">
 	<a class="linkShow" href="#" onclick="$('.archived').show(); $('.linkHide').show(); $(this).hide(); return false">Show archived rows</a>
 	<a class="linkHide" href="#" style="display:none" onclick="$('.archived').hide(); $('.linkShow').show(); $(this).hide(); return false">Hide archived rows</a>

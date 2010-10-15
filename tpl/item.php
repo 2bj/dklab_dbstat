@@ -70,7 +70,7 @@
 			<input type="submit" name="doTest" value="Test" /> or
 			<input type="submit" name="doRecalc" value="Recalc" />
 			from <input type="text" name="to" size="4" default="now"/> back <input type="text" name="back" size="4" default="14"/>
-			<select name="period"><option value="">- ALL -</option>SELECT_PERIODS</select> periods
+			<select name="period"><option value="0">- ALL -</option>SELECT_PERIODS</select> periods
 		</div>
 	</td>
 	<td><br/></td>
@@ -82,6 +82,6 @@
 	<br/>
 	<?foreach ($tables as $tableName => $tableHtml) {?>
 		<h2><?=$tableName?> period last calculated values</h2>
-		<?=htmlspecialchars_decode($tableHtml)?>
+		<?=unhtmlspecialchars($tableHtml)?>
 	<?}?>
 <?}?>

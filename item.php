@@ -22,7 +22,7 @@ if (!empty($_POST['doSave']) || !empty($_POST['doTest']) || !empty($_POST['doRec
 		$item = validateItem($_POST['item']);
 		if (!$id) {
 			$DB->update(
-				"INSERT INTO item(id, name, sql, dsn_id, recalculatable, archived, dim, tags, created, modified, relative_to) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				"INSERT INTO item(id, name, sql, dsn_id, recalculatable, archived, dim, tags, created, modified, relative_to) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 				$id = $DB->getSeq(), $item['name'], $item['sql'], $item['dsn_id'], $item['recalculatable'], $item['archived'], $item['dim'], $item['tags'], time(), time(), $item['relative_to']
 			);
  		} else {
@@ -36,7 +36,7 @@ if (!empty($_POST['doSave']) || !empty($_POST['doTest']) || !empty($_POST['doRec
 	 		redirect("index.php#$id", "Data is saved.");
 		} else if (!empty($_POST['doTest']) || !empty($_POST['doRecalc'])) {
 			list ($to, $back, $period) = parseToBackPeriod($_POST);
-			$periods = strlen($period)? array($period) : array_keys(getPeriods()); 
+			$periods = $period? array($period) : array_keys(getPeriods()); 
 			$tables = array();
 			try {
 				echo '<div id="log">';

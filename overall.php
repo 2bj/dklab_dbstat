@@ -31,7 +31,7 @@ if (isCgi() && !defined("NO_AUTH")) {
 		}
 	}
 	if (strval(@$_SESSION['credentials']) !== getSetting("loginpass", "")) {
-		template("login", array("title" => "Authenticate yourself"));
+		template("login", array("title" => "Authenticate yourself", "isGuest" => 1));
 		exit();
 	}
 }
@@ -113,17 +113,33 @@ function getPeriodMetadata($period)
 function template($__name, $__args = array(), $noLayout = false, $noQuote = false)
 {
 	if (!$noQuote) {
+		$t0 = microtime(true);
 		$__args = htmlspecialchars_recursive($__args);
+//		echo sprintf("Quoting took %d ms<br>", (microtime(true) - $t0) * 1000);
 	}
 	extract($__args);
+	
+	// Assign variables available everywhere.
+	$tags = getAllTags();
+	$base = preg_replace("{/[^/]*$}s", "/", getSetting("index_url"));
+	
 	$__cwd = getcwd();
 	chdir(dirname(__FILE__) . "/tpl");
 	if (!$noLayout) require "_header.php";
+	$t0 = microtime(true);
 	require "$__name.php";
+//	echo sprintf("Templating of %s took %d ms<br>", $__name, (microtime(true) - $t0) * 1000);
 	if (!$noLayout) require "_footer.php";
 	chdir($__cwd);
 }
 
+
+/**
+ * Quotes array recursively.
+ *
+ * @param string $s
+ * @return string
+ */
 function htmlspecialchars_recursive($a)
 {
 	if (is_array($a)) {
@@ -141,6 +157,18 @@ function htmlspecialchars_recursive($a)
 		$r = htmlspecialchars($a);
 	}
 	return $r;
+}
+
+
+/**
+ * Much faster version of htmlspecialchars_decode().
+ *
+ * @param string $s
+ * @return string
+ */
+function unhtmlspecialchars($s)
+{
+	return str_replace(array("&lt;", "&gt;", "&quot;", "&amp;"), array("<", ">", '"', '&'), $s);
 }
 
 
@@ -209,11 +237,17 @@ function trunkTime($time)
  */
 function getUniqForTime($time, $meta)
 {
-	if (is_callable($meta['uniq'])) {
-		return call_user_func($meta['uniq'], $time);
-	} else {
-		return date($meta['uniq'], $time);
+	static $cache = array();
+	$fmt = $meta['uniq'];
+	if (isset($cache[$fmt][$time])) {
+		return $cache[$fmt][$time];
 	}
+	if (is_callable($fmt)) {
+		$u = call_user_func($fmt, $time);
+	} else {
+		$u = date($fmt, $time);
+	}
+	return $cache[$fmt][$time] = $u;
 }
 
 
@@ -259,9 +293,10 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 {
 	global $DB;
 	$meta = getPeriodMetadata($period);
-	$series = getTimeSeries($to, $back, $period);
+	$series = array_values(getTimeSeries($to, $back, $period));
 	$to = $series[0]["to"];
 	$from = $series[count($series) - 1]["from"];
+	
 	$filterItem = "1=1";
 	if ($onlyItemIds) {
 		if (!is_array($onlyItemIds)) $onlyItemIds = explode(TAGS_SEP, $onlyItemIds);
@@ -278,6 +313,17 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			$filterData .= " OR c.name LIKE " . $DB->quote($dn);
 		}
 	}
+	$createdBetweens = "1=0";
+	foreach ($series as $interval) {
+	    $t = $interval['to'];
+	    $f = $t - 3600 * 24;
+	    // We fetch only data within 1d from a specified column boundary. It reduces
+	    // the number of fetched data for weekly and monthly items greatly: typically
+	    // only one data cell is fetched for each item's column.
+	    $createdBetweens .= ' OR (c.created BETWEEN ' . $DB->quote($f) . ' AND ' . $DB->quote($t) . ')';
+	}
+	
+	$t0 = microtime(true);
 	$cells = $DB->select('
 			SELECT 
 				item.name, item.id AS item_id, item.archived AS archived,
@@ -289,8 +335,8 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 				item 
 				LEFT JOIN data c ON (
 					c.item_id = item.id
-					AND ? <= c.created AND c.created <= ?
-					AND c.period = ?
+					AND (' . $createdBetweens . ')
+					AND c.period = ' . $DB->quote($period) . '
 					AND (' . $filterData . ')
 				)
 				LEFT JOIN data t ON (
@@ -311,12 +357,14 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			WHERE 
 				1=1
 				AND (' . $filterItem . ')
-			ORDER BY item.name, c.created DESC
-		',
-		$from, $to, $period
-	);
+	');
+	// PHP sorting is a bit faster and do not force the planner to think
+	// about plan changes to deal with sorts.
+	usort($cells, '_sortFetchedData');
+//	echo sprintf("Fetching took %d ms<br>", (microtime(true) - $t0) * 1000);
 
 	// For each data cell compute its unique date point.
+	$t0 = microtime(true);
 	$names = array();
 	foreach ($cells as $cell) {
 		$name = $cell['name'];
@@ -337,6 +385,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			$names[$name][""] = $cell;
 		}
 	}
+//	echo sprintf("Split by uniq intervals took %d ms<br>", (microtime(true) - $t0) * 1000);
 	
 	// Expand multi-place names.
 	foreach ($names as $name => $row) {
@@ -353,6 +402,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 	ksort($names);
 	
 	// Now build resulting table columns.
+	$t0 = microtime(true);
 	$table = array();
 	$captions = array();
 	$hasFirstColumn = false;
@@ -379,7 +429,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 				
 		// Calculate columns.
 		$total = null;
-		foreach (array_values($series) as $i => $interval) {
+		foreach ($series as $i => $interval) {
 			$uniq = $interval['uniq'];
 			if (isset($cells[$uniq])) {
 				$cell = $cells[$uniq];
@@ -402,6 +452,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			}
 		}
 	}
+//	echo sprintf("Table columns building took %d ms<br>", (microtime(true) - $t0) * 1000);
 	
 	// Calculate average.
 	foreach ($table as $groupName => $group) {
@@ -440,6 +491,16 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 	);
 }
 
+function _sortFetchedData($a, $b)
+{
+    $c = strcmp($a['name'], $b['name']);
+    if (!$c) {
+        $c = strcmp($b['created'], $a['created']);
+    }
+    return $c;
+}
+
+
 /**
  * Generates a HTML representation of the stats data.
  *
@@ -453,15 +514,12 @@ function generateHtmlTableFromData($table)
 		$firstInterval = current($table['captions']);
 		$period = $firstInterval['period'];
 	}
-	$base = preg_replace("{/[^/]*$}s", "/", getSetting("index_url"));
 	ob_start();
 	template(
 		"table", 
 		array(
 			"table" => $table, 
-			"base" => $base, 
 			"period" => $period,
-			"tags" => getAllTags(),
 		), 
 		true
 	);
@@ -627,7 +685,7 @@ function recalcItemCell($item, $interval)
 		}
 		
 		$t1 = microtime(true);
-		writeLogLine("OK ($value); took " . sprintf("%d ms", ($t1 - $t0) * 1000) . "\n");
+		writeLogLine("OK (" . join(", ", $values) . "); took " . sprintf("%d ms", ($t1 - $t0) * 1000) . "\n");
 	} catch (Exception $e) {
 		$t1 = microtime(true);
 		writeLogLine("ERROR! " . preg_replace('/[\r\n]+/', ' ', $e->getMessage()) . "; took " . sprintf("%d ms", ($t1 - $t0) * 1000) . "\n");
