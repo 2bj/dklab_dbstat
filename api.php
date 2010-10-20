@@ -8,6 +8,7 @@
 // - back:                how much columns to return
 // Result is JSON-encoded.
 // In case of any error its text is returned plainly.
+define("NO_AUTH", 1);
 require_once "overall.php";
 
 $params = $_POST + $_GET;
