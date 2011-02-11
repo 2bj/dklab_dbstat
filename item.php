@@ -13,10 +13,8 @@ if (!empty($_POST['doDelete'])) {
 
 if (!empty($_POST['doClear'])) {
 	$DB->update("DELETE FROM data WHERE item_id=?", $id);
-	redirect("item.php?id=" . urlencode($id), "Item data cleared.");
-}
-
-if (!empty($_POST['doSave']) || !empty($_POST['doTest']) || !empty($_POST['doRecalc'])) {
+	addMessage("Item data cleared.");
+} else if (!empty($_POST['doSave']) || !empty($_POST['doTest']) || !empty($_POST['doRecalc'])) {
 	try {
 		$DB->beginTransaction();
 		$item = validateItem($_POST['item']);
