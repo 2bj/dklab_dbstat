@@ -289,7 +289,7 @@ function getPeriods()
  * @param mixed $onlyDataNames
  * @return array  Array of groups of rows.
  */
-function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNames = null)
+function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNames = null, $onlyReName = null)
 {
 	global $DB;
 	$meta = getPeriodMetadata($period);
@@ -369,7 +369,8 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 	foreach ($cells as $cell) {
 		$name = $cell['name'];
 		if ($cell['data_name']) {
-			$name .= "/" . $cell['data_name'];
+            // Insert data name at the end of string and berore each ";" (for multi-named items).
+			$name = preg_replace('/(?=;)|$/s', "/" . $cell['data_name'], trim($name));
 		}
 		if (!isset($names[$name])) {
 			$names[$name] = array();
@@ -400,6 +401,14 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 		}
 	}
 	ksort($names);
+
+    if ($onlyReName) {
+        foreach ($names as $name => $row) {
+            if (!preg_match('/^\d*(?:' . $onlyReName . ')$/s', $name)) {
+                unset($names[$name]);
+            }
+        }
+    }
 	
 	// Now build resulting table columns.
 	$t0 = microtime(true);
