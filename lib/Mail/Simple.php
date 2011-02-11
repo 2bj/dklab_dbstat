@@ -141,7 +141,7 @@ class Mail_Simple
         list ($name, $body) = array($m[1], $m[2]);
         $GLOBALS['Mail_Simple_tmp'] = $encoding;
         $body = preg_replace_callback(
-            '/((?:^|>)\s*)([^<>]*?[^\w\s.][^<>]*?)(\s*(?:<|$))/s',
+            '/((?:^|>)\s*)([^<>]*?[^\w\s.,][^<>]*?)(\s*(?:<|$))/s',
             array('Mail_Simple', 'mailenc_header_callback'),
             $body
         );
