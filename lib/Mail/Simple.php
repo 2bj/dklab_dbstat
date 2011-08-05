@@ -34,13 +34,13 @@ class Mail_Simple
     // int mail($mail_text_with_headers, array $attachments)
     function mail($mail, $attachments=null) 
     {
-        // Encode mail headers.
+        // Encode mail headers and body.
         $mail = Mail_Simple::mailenc($mail);
         
         // Split the mail by headers and body.
         list ($headers, $body) = preg_split("/\r?\n\r?\n/s", $mail, 2);
         $headers .= "\r\n";
-        $headers .= "Content-Transfer-Encoding: 8bit\r\n";
+        $headers .= "Content-Transfer-Encoding: base64\r\n";
         $overallHeaders = $headers;
         
         // Select "To".
@@ -130,6 +130,7 @@ class Mail_Simple
             $line = Mail_Simple::mailenc_header($line, $encoding);
             $newhead .= "$line\r\n";
         }
+        $body = chunk_split(base64_encode($body));
         return "$newhead\r\n$body";
     }
 
@@ -141,7 +142,7 @@ class Mail_Simple
         list ($name, $body) = array($m[1], $m[2]);
         $GLOBALS['Mail_Simple_tmp'] = $encoding;
         $body = preg_replace_callback(
-            '/((?:^|>)\s*)([^<>]*?[^\w\s.,][^<>]*?)(\s*(?:<|$))/s',
+            '/((?:^|>)\s*)([^<>]*?[^\w\s,.][^<>]*?)(\s*(?:<|$))/s',
             array('Mail_Simple', 'mailenc_header_callback'),
             $body
         );
@@ -188,4 +189,3 @@ multipart/mixed
 >>application/octet-stream
 >>application/octet-stream
 */
-?>
