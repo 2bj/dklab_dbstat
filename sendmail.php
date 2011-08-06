@@ -2,6 +2,7 @@
 //
 // Command-line usage:
 //   php sendmail.php [period] ['reName']
+//
 
 define("NO_AUTH", 1);
 require_once "overall.php";
