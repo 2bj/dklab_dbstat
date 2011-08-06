@@ -1,7 +1,7 @@
 <?php
 //
 // Command-line usage:
-//   php recalc.php {<only_period>|all}> {<back>}
+//   php recalc.php {<only_period>|all} {<back>}
 //
 // No HTTP GZIP must be here!
 //
