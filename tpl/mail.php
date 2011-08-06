@@ -1,5 +1,5 @@
 From: DBStat <?="<$replyto>\n"?>
-To: <?foreach (explode(",", $to) as $i => $email) echo(($i? ", " : "") . "<" . trim($email) . ">"); echo "\n"?>
+To: <?="<" . trim($to) . ">\n"?>
 Subject: <?="$title\n"?>
 Content-Type: text/html; charset=UTF-8
 
