@@ -23,3 +23,18 @@ ul {
 .archived b a, .archived {
 	color: #BBBBBB;
 }
+
+.graph {
+   position: absolute;
+   z-index: 3;
+   background: #EEE;
+   border: 0px solid gray;
+}
+
+tr.checked {
+	background: #FAFAFA;
+}
+
+td.check, td.check input {
+	cursor: pointer;
+}
