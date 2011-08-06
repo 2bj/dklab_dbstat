@@ -46,7 +46,7 @@
 				<td><?=$row['average']?></td>
 				<td width="1" class="check">
 					<?if (isCgi()) {?>
-						<input type="checkbox" class="chk" name="chk[<?=$row['item_id']?>]" value="a"/>
+						<input type="checkbox" class="chk" name="chk[<?=$row['item_id']?>]" value="1"/>
 					<?}?>
 				</td>
 				<?foreach ($table['captions'] as $uniq => $interval) {?>
@@ -59,8 +59,9 @@
 						?>
 						<td 
 							<?=$styles? 'style="' . join(";", $styles) . '"' : ''?> 
-							<?=!$cell['is_complete']? ' class="incomplete" title="Incomplete; till ' . date("Y-m-d H:i:s", $cell['created']) . ' only"' : ""?>
-							value="<?=is_numeric($cell['value'])? $cell['value'] : ''?>"
+							<?=!$cell['is_complete']? 'title="Incomplete; till ' . date("Y-m-d H:i:s", $cell['created']) . ' only"' : ""?>
+							<?=!$interval['is_complete']? 'class="incomplete"' : ''?>
+							value="<?=preg_match('/^\d/s', trim($cell['value']))? trim($cell['value']) : ''?>"
 						>
 							<?=$cell['value']?>
 							<?if (strlen($cell['percent'])) {?>
@@ -68,7 +69,7 @@
 							<?}?>
 						</td>
 					<?} else {?>
-						<td><br/></td>
+						<td <?=!$interval['is_complete']? 'class="incomplete"' : ''?>><br/></td>
 					<?}?>
 				<?}?>
 			</tr>

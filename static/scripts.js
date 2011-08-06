@@ -1,4 +1,5 @@
 var GRAPH_WIDTH = 0, GRAPH_HEIGHT = 300, GRAPH_PADDING = 10, GRAPH_BORDER = 2;
+var GRAPH_COLORS = [ [ '#F00', '#FBB' ], [ '#0A0', '#9F9' ] ];
 var lastClickedChk = null;
 var lastCheckedChks = [];
 var lastShownGraph = null;
@@ -14,15 +15,17 @@ function getValuesOfRows(trs) {
 	var series = [];
 	$.each(trs, function(i) {
 		setOfTdsList.push($(this).children('td:not(.incomplete)'));
-		var color = ['red', 'green'][i];
+		var color = GRAPH_COLORS[i][0];
+		var gridColor = GRAPH_COLORS[i][1];
 		vAxes.push({
-			title: $(this).children('td:first').text(),
-			titleTextStyle: { color: color },
-			textStyle: { color: color }
+			gridlineColor: gridColor,
+			textStyle: { color: color },
+			viewWindowMode: 'maximized'
 		});
 		series.push({
 			targetAxisIndex: i,
-			color: color 
+			color: color,
+			lineWidth: 4 + (trs.length - i) * 2
 		});
 	});
 	
@@ -31,7 +34,9 @@ function getValuesOfRows(trs) {
 		var col = [];
 		col.push($($headTds[i]).html().replace(/<.*?>/g, ' '));
 		$.each(setOfTdsList, function() {
-			col.push($(this[i]).attr("value"));
+			var value = ($(this[i]).attr("value")||"").replace(/[^0-9.]+/g);
+			if (!value.length) value = null;
+			col.push(value);
 		});
 		data.push(col);
 	}
@@ -71,8 +76,8 @@ function showGraph(trs, x, yTop, yBottom, w, h) {
 	
 	var data = new google.visualization.DataTable();
 	data.addColumn('string', 'Date');
-	$.each(trs, function() {
-        data.addColumn('number', '');
+	$.each(trs, function(i) {
+        data.addColumn('number', $(this).children('td:first').text());
 	})
     data.addRows(values.data.length);
     $.each(values.data, function(i) {
@@ -88,12 +93,14 @@ function showGraph(trs, x, yTop, yBottom, w, h) {
     	curveType: 'function', 
     	hAxis: { 
     		direction: -1,
-    		slantedText: true
+    		slantedText: true,
+    		maxAlternation: 1
     	},
     	series: values.series,
     	vAxes: values.vAxes,
     	interpolateNulls: true,
-    	pointSize: 3
+    	pointSize: 10,
+    	legend: 'top'
     });
     return $target[0];
 }
