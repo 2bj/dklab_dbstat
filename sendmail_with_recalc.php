@@ -10,7 +10,7 @@ $re = @$_SERVER['argv'][1]? $_SERVER['argv'][1] : null;
 $time = time();
 
 echo "Recalculating previous day values...\n";
-//system("php recalc.php");
+system("php recalc.php");
 
 echo "Sending daily report...\n";
 system("php sendmail.php day " . escapeshellarg($re));
