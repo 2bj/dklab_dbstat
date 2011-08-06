@@ -1,6 +1,10 @@
+html, body {
+	height: 100%;
+}
+
 .message {
 	border: 1px dashed red;
-	width: 100%;
+	awidth: 100%;
 	padding: 4px;
 	margin-bottom: 0.5em;
 }
@@ -37,4 +41,38 @@ tr.checked {
 
 td.check, td.check input {
 	cursor: pointer;
+}
+
+.CodeMirror {
+    border: 3px solid #eee;
+}
+.CodeMirror-scroll {
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+#ajax_test_sql_result {
+	width: 450px;
+	position: absolute;
+	top: 0;
+	right: 0;
+	background: #FFAAAA;
+	color: black;
+	border: 1px solid red;
+	padding: 1em;
+	display: none;
+}
+
+#ajax_test_sql_result .head {
+	font-weight: bold;
+	font-size: 150%;
+	padding-bottom: 0.5em;
+}
+
+.sql_error {
+	border-color: red;
+}
+
+.sql_ok {
+	border-color: #00DD00;
 }

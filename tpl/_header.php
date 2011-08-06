@@ -3,8 +3,6 @@
 	<title>DBStat: <?=$title?></title>
 	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 	<script type="text/javascript" src="static/jquery-1.4.3.min.js"></script>
-	<script type="text/javascript" src="static/jquery.autogrow-textarea.js"></script>
-	<script type="text/javascript" src="static/scripts.js"></script>
 	<link rel="stylesheet" href="static/styles.css">
 </head>
 <body>

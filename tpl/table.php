@@ -19,7 +19,7 @@
 				if (!$interval['is_complete']) $styles[] = "color:{$COLORS['incomplete']}";
 				else if ($interval['is_holiday']) $styles[] = "color:{$COLORS['holiday']}";
 			?>
-			<td width="1"<?=$styles? ' style="' . join(";", $styles) . '"' : ''?><?=!$interval['is_complete']? ' class="incomplete"' : ""?>>
+			<td width="1"<?=$styles? ' style="' . join(";", $styles) . '"' : ''?>>
 				<?=nl2br($interval['caption'])?>
 			</td>
 		<?}?>
@@ -59,8 +59,7 @@
 						?>
 						<td 
 							<?=$styles? 'style="' . join(";", $styles) . '"' : ''?> 
-							<?=!$cell['is_complete']? 'title="Incomplete; till ' . date("Y-m-d H:i:s", $cell['created']) . ' only"' : ""?>
-							<?=!$interval['is_complete']? 'class="incomplete"' : ''?>
+							<?=!$cell['is_complete']? 'class="incomplete" title="Incomplete; till ' . date("Y-m-d H:i:s", $cell['created']) . ' only"' : ""?>
 							value="<?=preg_match('/^\d/s', trim($cell['value']))? trim($cell['value']) : ''?>"
 						>
 							<?=$cell['value']?>
@@ -69,7 +68,7 @@
 							<?}?>
 						</td>
 					<?} else {?>
-						<td <?=!$interval['is_complete']? 'class="incomplete"' : ''?>><br/></td>
+						<td class="incomplete"><br/></td>
 					<?}?>
 				<?}?>
 			</tr>

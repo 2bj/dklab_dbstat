@@ -4,13 +4,32 @@
 	<?return?>
 <?}?>
 
+<link rel="stylesheet" href="static/codemirror/lib/codemirror.css">
+<script src="static/codemirror/lib/codemirror-compressed.js"></script>
+<link rel="stylesheet" href="static/codemirror/theme/neat.css">
+<link rel="stylesheet" href="static/codemirror/neat-plsql.css">
+
+<?if ($canAjaxTestSql) {?>
+	<div id="ajax_test_sql_result">
+		<div class="head">SQL validation result</div>
+		<div class="error"></div>
+	</div>
+<?}?>
+
 <form method="post">
 <input type="hidden" name="item[id]" />
-<table>
+<table width="100%">
 	<tr valign="top">
-	<td>Database</td>
-	<td><select name="item[dsn_id]">SELECT_DSNS</select></td>
-	<td></td>
+	<td>Options</td>
+	<td>
+		<select name="item[dsn_id]" id="dsn_id"><option value="">- Database -</option>SELECT_DSNS</select>
+		<select name="item[relative_to]" style="width:25em"><option value="">- Relative to -</option>SELECT_ITEMS</select>
+		<select name="item[dim]" default="1">
+			<option value="1">Single value returned</option>
+			<option value="2">Column returned</option>
+		</select>
+	</td>
+	<td width="250"></td>
 	</tr>
 	<tr valign="top">
 	<td>Name</td>
@@ -18,62 +37,57 @@
 	<td class="comment">Separate aliases with ";".</td>
 	</tr>
 	<tr valign="top">
-	<td>Relative to</td>
-	<td><select name="item[relative_to]"><option value="">none</option>SELECT_ITEMS</select></td>
-	<td></td>
-	</tr>
-	<tr valign="top">
-	<td>Item type</td>
-	<td>
-		<select name="item[dim]" default="1">
-		<option value="1">Single value returned</option>
-		<option value="2">Column returned</option>
-		</select>
-	</td>
-	</tr>
-	<tr valign="top">
 	<td>Tags</td>
 	<td><input type="text" name="item[tags]" size="60" style="width:100%"/></td>
 	<td class="comment">Separate tags with space.</td>
 	</tr>
 	<tr valign="top">
-	<td>SQL</td>
-	<td>
-		<textarea name="item[sql]" cols="90" rows="8"></textarea><br>
-
-		<input type="hidden" name="item[recalculatable]" value="0" />
-		<input type="checkbox" id="recalculatable" name="item[recalculatable]" value="1" default="1" />
-		<label for="recalculatable">Could be recalculated to the past</label><br/>
-
-		<input type="hidden" name="item[archived]" value="0" />
-		<input type="checkbox" id="archived" name="item[archived]" value="1" default="0" />
-		<label for="archived">Archived (hidden, but calculated)</label><br/>
-	</td>
-	<td class="comment">
-		Available marcos are:
-		<ul>
-		<li><b>$FROM</b>: period start (TIMESTAMP)</li>
-		<li><b>$TO</b>: period end (TIMESTAMP)</li>
-		<li><b>$DAYS</b>: period length (number of days)</li>
-		</ul>
-	</td>
+		<td>SQL</td>
+		<td>
+			<textarea id="sql" name="item[sql]" cols="90" rows="8" style="width:100%"></textarea>
+		</td>
+		<td class="comment">
+			Available marcos are:
+			<ul>
+			<li><b>$FROM</b>: period start (TIMESTAMP)</li>
+			<li><b>$TO</b>: period end (TIMESTAMP)</li>
+			<li><b>$DAYS</b>: period length (number of days)</li>
+			</ul>
+		</td>
 	</tr>
-	<tr valign="top">
-	<td><br/></td>
-	<td>
-		<input type="submit" name="doSave" value="<?=@$_POST['item']['id']? "Save" : "Add"?>"/>
-		<?if (@$_POST['item']['id']) {?>
-			<input type="submit" name="doDelete" confirm="Are you sure you want to delete this item?" value="Delete" style="margin-left:1em"/>
-			<input type="submit" name="doClear" confirm="Are you sure you want to clear all data for this item?" value="Clear" style="margin-left:1em"/>
-		<?}?>
-		<div style="float:right">
-			<input type="submit" name="doTest" value="Test" /> or
-			<input type="submit" name="doRecalc" value="Recalc" />
-			from <input type="text" name="to" size="4" default="now"/> back <input type="text" name="back" size="4" default="14"/>
-			<select name="period"><option value="0">- ALL -</option>SELECT_PERIODS</select> periods
-		</div>
-	</td>
-	<td><br/></td>
+	<tr valign="top" id="action_bar">
+		<td><br/></td>
+		<td>
+			<br/>
+			
+			<div style="float:right">
+				<input type="hidden" name="item[archived]" value="0" />
+				<input type="checkbox" id="archived" name="item[archived]" value="1" default="0" />
+				<label for="archived">Archived (hidden, but calculated)</label><br/>
+			</div>
+
+			<div>
+				<input type="hidden" name="item[recalculatable]" value="0" />
+				<input type="checkbox" id="recalculatable" name="item[recalculatable]" value="1" default="1" />
+				<label for="recalculatable" style="margin-right:3em">Could be recalculated to the past</label>
+			</div>
+			
+			<div style="float:right">
+				<input type="submit" name="doTest" value="Test" /> or
+				<input type="submit" name="doRecalc" value="Recalc" />
+				from <input type="text" name="to" size="4" default="now"/> back <input type="text" name="back" size="4" default="14"/>
+				<select name="period"><option value="0">- ALL -</option>SELECT_PERIODS</select> periods
+			</div>
+
+			<div>
+				<input type="submit" name="doSave" value="<?=@$_POST['item']['id']? "Save" : "Add"?>"/>
+				<?if (@$_POST['item']['id']) {?>
+					<input type="submit" name="doDelete" confirm="Are you sure you want to delete this item?" value="Delete" style="margin-left:1em"/>
+					<input type="submit" name="doClear" confirm="Are you sure you want to clear all data for this item?" value="Clear" style="margin-left:1em"/>
+				<?}?>
+			</div>
+		</td>
+		<td><br/></td>
 	</tr>
 </table>
 </form>

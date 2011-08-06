@@ -211,6 +211,7 @@ function unhtmlspecialchars($s)
  */
 function getTimeSeries($to, $back, $period)
 {
+	if (!$back) $back = getSetting("cols", 30) + 1;
 	$metadata = getPeriodsMetadata();
 	$meta = getPeriodMetadata($period);
 	$minDate = @strtotime(getSetting("mindate", "1971-01-01"));
@@ -617,6 +618,9 @@ function getAndRemoveMessages()
 
 function validateItem($item)
 {
+	if (!strlen(trim($item['dsn_id']))) {
+		throw new Exception('No database selected');
+	}
 	if (!strlen(trim($item['name']))) {
 		throw new Exception('Name must be specified');
 	}
@@ -671,6 +675,19 @@ function recalcItemRow($itemId, $to, $back, $period)
 	}
 }
 
+function replaceMacrosInSql($sql, $interval)
+{
+	$macros = array(
+		'TO'    => date("Y-m-d H:i:s", $interval['to']), // we do not trunk $to here
+		'FROM'  => date("Y-m-d H:i:s", $interval['from']),
+		'DAYS'  => intval(($interval['to'] - $interval['from']) / 3600 / 24),
+		'HOURS' => intval(($interval['to'] - $interval['from']) / 3600),
+	);
+	foreach ($macros as $k => $v) {
+		$sql = str_replace('$' . $k, "'$v'", $sql);
+	}
+	return $sql;
+}
 
 function recalcItemCell($item, $interval)
 {
@@ -697,16 +714,7 @@ function recalcItemCell($item, $interval)
 
 		// Run the calculation.
 		$t0 = microtime(true); // refresh $t0 excluding connect time
-		$sql = $item['sql'];
-		$macros = array(
-			'TO'    => date("Y-m-d H:i:s", $interval['to']), // we do not trunk $to here
-			'FROM'  => date("Y-m-d H:i:s", $interval['from']),
-			'DAYS'  => intval(($interval['to'] - $interval['from']) / 3600 / 24),
-			'HOURS' => intval(($interval['to'] - $interval['from']) / 3600),
-		);
-		foreach ($macros as $k => $v) {
-			$sql = str_replace('$' . $k, "'$v'", $sql);
-		}
+		$sql = replaceMacrosInSql($item['sql'], $interval);
 		$rowset = $db->select($sql);
 
 		// Parse single or column-returning result.
@@ -742,9 +750,34 @@ function recalcItemCell($item, $interval)
 		writeLogLine("OK (" . join(", ", $values) . "); took " . sprintf("%d ms", ($t1 - $t0) * 1000) . "\n");
 	} catch (Exception $e) {
 		$t1 = microtime(true);
-		writeLogLine("ERROR! " . preg_replace('/[\r\n]+/', ' ', $e->getMessage()) . "; took " . sprintf("%d ms", ($t1 - $t0) * 1000) . "\n");
+		writeLogLine(
+			htmlspecialchars("ERROR! " . preg_replace('/[\r\n]+/', ' ', $e->getMessage()) . "; took " . sprintf("%d ms", ($t1 - $t0) * 1000) . "\n"),
+			true
+		);
 		throw $e;
 	}
+}
+
+function testSqlAndReturnError($dsnId, $sql)
+{
+	global $DB;
+	$dsn = $DB->selectCell("SELECT value FROM dsn WHERE id=?", $dsnId);
+	if (!$dsn) return "No database selected";
+	$sql = replaceMacrosInSql($sql, array("from" => time() - 3600 * 24, "to" => time()));
+	try {
+		$db = new PDO_Simple($dsn);
+		$result = $db->select("EXPLAIN $sql");
+	} catch (Exception $e) {
+		return $e->getMessage();
+	}
+	return null;
+}
+
+function canAjaxTestSql()
+{
+	global $DB;
+	$dsnId = $DB->selectCell("SELECT id FROM dsn LIMIT 1");
+	return !testSqlAndReturnError($dsnId, "SELECT 1");
 }
 
 function writeLogLine($line, $noEscape = false)
@@ -814,5 +847,3 @@ function setSetting($name, $value)
 		$DB->update("INSERT INTO setting(name, value) VALUES(?, ?)", $name, $value);
 	}
 }
-
-
