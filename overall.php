@@ -41,7 +41,7 @@ if (get_magic_quotes_gpc()) {
 	foreach (array("_GET", "_POST") as $k) {
 		if (isset($GLOBALS[$k])) {
 			array_walk_recursive($GLOBALS[$k], create_function('&$a', '$a = stripslashes($a);'));
-		}                  
+		}
 	}
 }
 
@@ -83,10 +83,41 @@ function createDbConnection()
 function getPeriodsMetadata()
 {
 	$rows = array(
-		array("period" => "day",   "avg_len" => 3600 * 24,      "caption" => "Daily",   "uniq" => "Y-m-d", "fmt" => "D\nM\nd"),
-		array("period" => "week",  "avg_len" => 3600 * 24 * 7,  "caption" => "Weekly",  "uniq" => "getNextWeekendDate",   "fmt" => "D\nM\nd"),
-		array("period" => "month", "avg_len" => 3600 * 24 * 30, "caption" => "Monthly", "uniq" => "Y-m",   "fmt" => "M\nY"),
-		array("period" => "total", "avg_len" => 1e10,           "caption" => "Total",   "uniq" => "Y-m-d", "fmt" => "D\nM\nd"),
+		array(
+			"period" => "day",
+			"avg_len" => 3600 * 24,
+			"caption" => "Daily",
+			"uniq" => "Y-m-d",
+			"fmt" => "D\nM\nd"
+		),
+		array(
+			"period" => "week",
+			"avg_len" => 3600 * 24 * 7,
+			"caption" => "Weekly",
+			"uniq" => "getNextWeekendDate",
+			"fmt" => "D\nM\nd"
+		),
+		array(
+			"period" => "month",
+			"avg_len" => 3600 * 24 * 30,
+			"caption" => "Monthly",
+			"uniq" => "Y-m",
+			"fmt" => "M\nY"
+		),
+		array(
+			"period" => "quarter",
+			"avg_len" => 3600 * 24 * 30 * 3,
+			"caption" => "Quarterly",
+			"uniq" => "getQuarterName",
+			"fmt" => "getQuarterName"
+		),
+		array(
+			"period" => "total",
+			"avg_len" => 1e10,
+			"caption" => "Total",
+			"uniq" => "Y-m-d",
+			"fmt" => "D\nM\nd"
+		),
 	);
 	$result = array();
 	foreach ($rows as $row) {
@@ -118,11 +149,11 @@ function template($__name, $__args = array(), $noLayout = false, $noQuote = fals
 //		echo sprintf("Quoting took %d ms<br>", (microtime(true) - $t0) * 1000);
 	}
 	extract($__args);
-	
+
 	// Assign variables available everywhere.
 	$tags = getAllTags();
 	$base = preg_replace("{/[^/]*$}s", "/", getSetting("index_url"));
-	
+
 	$__cwd = getcwd();
 	chdir(dirname(__FILE__) . "/tpl");
 	if (!$noLayout) require "_header.php";
@@ -189,7 +220,7 @@ function getTimeSeries($to, $back, $period)
 	foreach ($metadata as $v) {
 		$decrement = min($decrement, $v['avg_len']);
 	}
-	// Generate series.	
+	// Generate series.
 	$series = array();
 	for ($time = $to, $i = 0; $i < $back; $i++) {
 		if ($time < $minDate) break;
@@ -199,10 +230,10 @@ function getTimeSeries($to, $back, $period)
 			$from -= $decrement;
 		}
 		$from = trunkTime($from);
-		$caption = date($meta['fmt'], $time);
+		$caption = is_callable($meta['fmt'])? call_user_func($meta['fmt'], $time) : date($meta['fmt'], $time);
 		$series[] = array(
 			"uniq"          => $uniq,
-			"to"            => $time, 
+			"to"            => $time,
 			"from"          => $period != "total"? $from : 0,
 			"caption"       => $caption,
 			"period"        => $period,
@@ -265,6 +296,20 @@ function getNextWeekendDate($time)
 
 
 /**
+ * Helper function: return the name of the quarter within which the time is.
+ *
+ * @param int $time
+ * @return int
+ */
+function getQuarterName($time)
+{
+	$mon = intval(date("m", $time));
+	$quart = intval(($mon - 1) / 3) + 1;
+	return "Q" . $quart . "\n" . date("Y", $time);
+}
+
+
+/**
  * Returns array of periods names which could be used to create <SELECT>.
  *
  * @return array
@@ -296,7 +341,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 	$series = array_values(getTimeSeries($to, $back, $period));
 	$to = $series[0]["to"];
 	$from = $series[count($series) - 1]["from"];
-	
+
 	$filterItem = "1=1";
 	if ($onlyItemIds) {
 		if (!is_array($onlyItemIds)) $onlyItemIds = explode(TAGS_SEP, $onlyItemIds);
@@ -322,17 +367,17 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 	    // only one data cell is fetched for each item's column.
 	    $createdBetweens .= ' OR (c.created BETWEEN ' . $DB->quote($f) . ' AND ' . $DB->quote($t) . ')';
 	}
-	
+
 	$t0 = microtime(true);
 	$cells = $DB->select('
-			SELECT 
+			SELECT
 				item.name, item.id AS item_id, item.archived AS archived,
 				c.id AS data_id, c.value, c.created, c.name AS data_name,
-				t.value AS total, 
+				t.value AS total,
 				r.value AS relative_value,
 				ri.name AS relative_name
-			FROM 
-				item 
+			FROM
+				item
 				LEFT JOIN data c ON (
 					c.item_id = item.id
 					AND (' . $createdBetweens . ')
@@ -354,7 +399,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 					AND r.period = c.period
 					AND (ri.dim = 1 OR r.name = c.name)
 				)
-			WHERE 
+			WHERE
 				1=1
 				AND (' . $filterItem . ')
 	');
@@ -387,7 +432,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 		}
 	}
 //	echo sprintf("Split by uniq intervals took %d ms<br>", (microtime(true) - $t0) * 1000);
-	
+
 	// Expand multi-place names.
 	foreach ($names as $name => $row) {
 		$list = preg_split('/\s*;\s*/s', $name);
@@ -409,7 +454,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
             }
         }
     }
-	
+
 	// Now build resulting table columns.
 	$t0 = microtime(true);
 	$table = array();
@@ -435,7 +480,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			"cells"         => array(),
 		);
 		$rr =& $table[$group][$name];
-				
+
 		// Calculate columns.
 		$total = null;
 		foreach ($series as $i => $interval) {
@@ -462,7 +507,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 		}
 	}
 //	echo sprintf("Table columns building took %d ms<br>", (microtime(true) - $t0) * 1000);
-	
+
 	// Calculate average.
 	foreach ($table as $groupName => $group) {
 		foreach ($group as $rowName => $row) {
@@ -473,7 +518,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			}
 		}
 	}
-	
+
 	// Build captions.
 	$captions = array();
 	foreach ($series as $interval) {
@@ -493,7 +538,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 		reset($captions);
 		unset($captions[key($captions)]);
 	}
-		
+
 	return array(
 		"captions" => $captions,
 		"groups"   => $table
@@ -525,11 +570,11 @@ function generateHtmlTableFromData($table)
 	}
 	ob_start();
 	template(
-		"table", 
+		"table",
 		array(
-			"table" => $table, 
+			"table" => $table,
 			"period" => $period,
-		), 
+		),
 		true
 	);
 	$html = ob_get_clean();
@@ -633,7 +678,7 @@ function recalcItemCell($item, $interval)
 	try {
 		$t0 = microtime(true); // for catch {} block
 		writeLogLine("[" . preg_replace('/\s+/s', ' ', $interval['caption']) . "] \"{$item['name']}\" " . sprintf("%-13s", strtolower($interval['periodCaption']) . "..."));
-		
+
 		// Test if we could calculate this item.
 		if (!$item['recalculatable']) {
 			if (trunkTime(time()) != trunkTime($interval['to']) && trunkTime(trunkTime(time()) - 1) != trunkTime($interval['to'])) {
@@ -641,7 +686,7 @@ function recalcItemCell($item, $interval)
 				return;
 			}
 		}
-		
+
 		// Connect to the database with connection pooling.
 		$dsn = $DB->selectCell("SELECT value FROM dsn WHERE id=?", $item['dsn_id']);
 		static $dbs = array();
@@ -649,7 +694,7 @@ function recalcItemCell($item, $interval)
 			$dbs[$dsn] = new PDO_Simple($dsn);
 		}
 		$db = $dbs[$dsn];
-		
+
 		// Run the calculation.
 		$t0 = microtime(true); // refresh $t0 excluding connect time
 		$sql = $item['sql'];
@@ -663,7 +708,7 @@ function recalcItemCell($item, $interval)
 			$sql = str_replace('$' . $k, "'$v'", $sql);
 		}
 		$rowset = $db->select($sql);
-		
+
 		// Parse single or column-returning result.
 		$values = array();
 		if ($item['dim'] == 1) {
@@ -683,7 +728,7 @@ function recalcItemCell($item, $interval)
 				$values[$key] = $value;
 			}
 		}
-		
+
 		// Insert the data.
 		$DB->update('DELETE FROM data WHERE item_id=? AND period=? AND (created BETWEEN ? AND ?)', $item['id'], $interval['period'], $interval['from'] + 1, $interval['to']);
 		foreach ($values as $key => $value) {
@@ -692,7 +737,7 @@ function recalcItemCell($item, $interval)
 				$DB->getSeq(), $item['id'], $interval['period'], $interval['to'], $value, $key
 			);
 		}
-		
+
 		$t1 = microtime(true);
 		writeLogLine("OK (" . join(", ", $values) . "); took " . sprintf("%d ms", ($t1 - $t0) * 1000) . "\n");
 	} catch (Exception $e) {

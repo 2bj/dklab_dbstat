@@ -7,13 +7,13 @@ var lastShownGraph = null;
 function getValuesOfRows(trs) {
 	var pos = 4;
 	var $table = $(trs[0]).closest('table');
-	var $headTds = $table.find('tr:first').children('td');
+	var $headTds = $table.find('tr:first').children('td:not(.incomplete)');
 
 	var setOfTdsList = [];
 	var vAxes = [];
 	var series = [];
 	$.each(trs, function(i) {
-		setOfTdsList.push($(this).children('td'));
+		setOfTdsList.push($(this).children('td:not(.incomplete)'));
 		var color = ['red', 'green'][i];
 		vAxes.push({
 			title: $(this).children('td:first').text(),
