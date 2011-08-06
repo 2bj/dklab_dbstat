@@ -746,7 +746,7 @@ function parseToBackPeriod($arr, $wholeIntervalByDefault = false)
 		}
 	}
 	$period = strlen(@$arr['period'])? $arr['period'] : 'day';
-	$back = @$arr['back']? $arr['back'] : getSetting("cols", 30);
+	$back = @$arr['back']? $arr['back'] : getSetting(isCgi()? "cols" : "cols_email", 30) + 1;
 	return array($to, $back, $period);
 }
 

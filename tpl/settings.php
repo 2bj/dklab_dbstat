@@ -19,11 +19,17 @@
 	</tr>
 
 	<tr valign="top">
-	<td align="right">Number of columns&nbsp;</td>
+	<td align="right">Number of columns at site&nbsp;</td>
 	<td><input type="text" name="settings[cols]" size="50"/></td>
 	<td></td>
 	</tr>
 
+	<tr valign="top">
+	<td align="right">Number of columns in e-mail&nbsp;</td>
+	<td><input type="text" name="settings[cols_email]" size="50"/></td>
+	<td></td>
+	</tr>
+	
 	<tr valign="top">
 	<td align="right">Project launched&nbsp;</td>
 	<td><input type="text" name="settings[mindate]" size="50"/></td>

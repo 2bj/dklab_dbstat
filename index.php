@@ -7,7 +7,7 @@ setSetting("index_url", ($_SERVER['SERVER_PORT'] == 443? "https" : "http") . ":/
 
 list ($to, $back, $period) = parseToBackPeriod($_GET);
 
-$data = generateTableData($to, getSetting("cols", 30), $period, @$_GET['tag'], null, @$_GET['re']); 
+$data = generateTableData($to, getSetting("cols", 30) + 1, $period, @$_GET['tag'], null, @$_GET['re']); 
 $html = generateHtmlTableFromData($data);
 
 $SELECT_PERIODS = getPeriods();
