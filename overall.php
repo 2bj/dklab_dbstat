@@ -55,8 +55,11 @@ if (get_magic_quotes_gpc()) {
 function createDbConnection()
 {
 	$DB = new PDO_Simple(DB_DSN);
+	if ($DB->getAttribute(PDO::ATTR_DRIVER_NAME) == 'mysql') {
+		$DB->exec("SET sql_mode='ANSI_QUOTES'");
+	}
 	try {
-		$version = $DB->selectCell("SELECT version FROM version");
+		$version = $DB->selectCell('SELECT "version" FROM "version"');
 	} catch (PDOException $e) {
 		$version = -1;
 	}
@@ -64,8 +67,12 @@ function createDbConnection()
 		if (preg_match('/^(\d+)/s', basename($f), $m) && intval($m[1]) > intval($version)) {
 			$sql = file_get_contents($f);
 			try {
-				$DB->exec("BEGIN; " . $sql . "; COMMIT;");
-				$DB->update("UPDATE version SET version=?", intval($m[1]));
+				$DB->beginTransaction();
+				foreach (explode(";", $sql) as $cmd) {
+					$DB->exec(trim($cmd));
+				}
+				$DB->update('UPDATE "version" SET "version"=?', intval($m[1]));
+				$DB->commit();
 			} catch (Exception $e) {
 				die("Exception: " . $e->getMessage() . "\n" . $sql);
 			}

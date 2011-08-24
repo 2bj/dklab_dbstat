@@ -1,4 +1,4 @@
-CREATE TABLE version(
-	version INTEGER NOT NULL
+CREATE TABLE "version"(
+	"version" INTEGER NOT NULL
 );
-INSERT INTO version(version) VALUES(0);
+INSERT INTO "version"("version") VALUES(0);
