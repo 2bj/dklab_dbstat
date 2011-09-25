@@ -132,15 +132,13 @@ class Mail_Simple
             $headers = $overallHeaders;
         }
         // Remove \r (because GMail or DKIM could have conflict with them).
-        $headers = str_replace("\r", "", $headers);
+        $headers = str_replace("\r", "", trim($headers));
+        $body = str_replace("\r", "", $body);
         // Send mail.
         $opt = null;
         if (preg_match('/<(.*?)>/s', $retpath, $m)) {
             $opt = "-f " . escapeshellarg($m[1]);
         }
-        // To avoid DKIM bugs, remove \r.
-        $body = str_replace("\r", "", $body);
-        $headers = str_replace("\r", "", trim($headers));
         //var_dump($to, $subject, $body, trim($headers), $opt); die();
         mail($to, $subject, $body, $headers, $opt);
     }
