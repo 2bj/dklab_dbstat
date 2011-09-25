@@ -4,14 +4,15 @@
  * PHP5 and PHP4-compatible (yes, the code is in PHP4-style,
  * because it must be PHP4-compatible for some old projects).
  *
- * @version 1.11
+ * @version 1.12
  *
  * Usage sample:
  *
  * Mail_Simple::mail(
- *     trim(preg_replace('/^\s+/m', '', '
+ *     trim(preg_replace('/^[ \t]+/m', '', '
  *         From: Иван Петров <aa@example.com>
  *         To: Сидор Незаэнкоженный Тоже Допустим <bb@example.com>
+ *         Return-Path: <aa@example.com>
  *         Subject: Тоже можно прямо так писать, не кодируя - он автоматом закодируется
  *         Content-Type: text/html; charset=UTF-8
  *
@@ -53,23 +54,29 @@ class Mail_Simple
         }
         // Encode mail headers and body
         $mail = Mail_Simple::mailenc($mail);
-        
+
         // Split the mail by headers and body.
         list ($headers, $body) = preg_split("/\r?\n\r?\n/s", $mail, 2);
         $headers .= "\r\n";
         $overallHeaders = $headers;
-        
+
         // Select "To".
         $to = "";
-        if (preg_match('/^To:\s*([^\r\n]*)[\r\n]*/m', $overallHeaders, $p)) {
-            $to = @$p[1];
-            $overallHeaders = str_replace($p[0], "", $overallHeaders);
+        if (preg_match('/\A(.*)^To:\s*([^\r\n]*)[\r\n]*(.*)\Z/mis', $overallHeaders, $p)) {
+            $to = $p[2];
+            $overallHeaders = $p[1] . $p[3];
+        }
+        // Select "Return-Path".
+        $retpath = "";
+        if (preg_match('/\A(.*)^Return-Path:\s*([^\r\n]*)[\r\n]*(.*)\Z/mis', $overallHeaders, $p)) {
+            $retpath = $p[2];
+            $overallHeaders = $p[1] . $p[3];
         }
         // Select "Subject".
-        $subject = "";  
-        if (preg_match('/^Subject:\s*([^\r\n]*)[\r\n]*/m', $overallHeaders, $p)) {
-            $subject = @$p[1];
-            $overallHeaders = str_replace($p[0], "", $overallHeaders);
+        $subject = "";
+        if (preg_match('/\A(.*)^Subject:\s*([^\r\n]*)[\r\n]*(.*)\Z/mis', $overallHeaders, $p)) {
+            $subject = $p[2];
+            $overallHeaders = $p[1] . $p[3];
         }
 
         // Attachment processing.
@@ -88,7 +95,7 @@ class Mail_Simple
                 } else {
                     $file = $attachment;
                 }
-                
+
                 if ($file !== null && !file_exists($file)) continue;
                 if ($data === null) $data = file_get_contents($file);
                 if (is_int($name)) $name = $file !== null? basename($file) : $id;
@@ -98,23 +105,23 @@ class Mail_Simple
                 $head .= "Content-Disposition: attachment; filename=" . addslashes($name) . "\r\n";
                 $head .= "Content-Transfer-Encoding: base64\r\n";
                 if ($id !== null) $head .= "Content-ID: <$id>\r\n";
-                $head .= "\r\n" . chunk_split(base64_encode($data));    
+                $head .= "\r\n" . chunk_split(base64_encode($data));
                 $multiparts[$type][] = $head;
             }
-            
+
             // Related multiparts must always be situated on most depth.
             if (isset($multiparts['related'])) {
                 $related = $multiparts['related'];
                 unset($multiparts['related']);
                 $multiparts = array('related'=>$related) + $multiparts;
             }
-            
+
             foreach ($multiparts as $type=>$parts) {
                 array_unshift($parts, $headers . "\r\n" . $body);
                 $boundary = md5(uniqid(mt_rand(), true));
                 $body = 
-                    "--" . $boundary . "\r\n" . 
-                    join("\r\n--" . $boundary . "\r\n", $parts) . "\r\n" . 
+                    "--" . $boundary . "\r\n" .
+                    join("\r\n--" . $boundary . "\r\n", $parts) . "\r\n" .
                     "--" . $boundary . "--\r\n";
                 $headers = "Content-Type: multipart/$type; boundary=$boundary\r\n";
             }
@@ -126,10 +133,16 @@ class Mail_Simple
         }
         // Remove \r (because GMail or DKIM could have conflict with them).
         $headers = str_replace("\r", "", $headers);
+        // Send mail.
+        $opt = null;
+        if (preg_match('/<(.*?)>/s', $retpath, $m)) {
+            $opt = "-f " . escapeshellarg($m[1]);
+        }
+        // To avoid DKIM bugs, remove \r.
         $body = str_replace("\r", "", $body);
-        // Send the mail.     
-        //var_dump($to, $subject, $body, trim($headers)); die();
-        mail($to, $subject, $body, trim($headers));
+        $headers = str_replace("\r", "", trim($headers));
+        //var_dump($to, $subject, $body, trim($headers), $opt); die();
+        mail($to, $subject, $body, $headers, $opt);
     }
 
     /**
