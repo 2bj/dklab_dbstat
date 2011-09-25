@@ -20,31 +20,31 @@
 <input type="hidden" name="item[id]" />
 <table width="100%">
 	<tr valign="top">
-	<td>Options</td>
-	<td>
-		<select name="item[dsn_id]" id="dsn_id"><option value="">- Database -</option>SELECT_DSNS</select>
-		<select name="item[relative_to]" style="width:25em"><option value="">- Relative to -</option>SELECT_ITEMS</select>
-		<select name="item[dim]" default="1">
-			<option value="1">Single value returned</option>
-			<option value="2">Column returned</option>
-		</select>
-	</td>
-	<td width="250"></td>
-	</tr>
-	<tr valign="top">
-	<td>Name</td>
-	<td><input type="text" name="item[name]" size="90" style="width:100%"/></td>
-	<td class="comment">Separate aliases with ";".</td>
-	</tr>
-	<tr valign="top">
-	<td>Tags</td>
-	<td><input type="text" name="item[tags]" size="60" style="width:100%"/></td>
-	<td class="comment">Separate tags with space.</td>
-	</tr>
-	<tr valign="top">
-		<td>SQL</td>
+		<td width="1" class="caption">Options</td>
 		<td>
-			<textarea id="sql" name="item[sql]" cols="90" rows="8" style="width:100%"></textarea>
+			<select name="item[dsn_id]" id="dsn_id"><option value="">- Database -</option>SELECT_DSNS</select>
+			<select name="item[relative_to]" style="width:25em"><option value="">- Data is relative to -</option>SELECT_ITEMS</select>
+			<select name="item[dim]" default="1">
+				<option value="1">Single value returned</option>
+				<option value="2">Column returned</option>
+			</select>
+		</td>
+		<td width="300"></td>
+	</tr>
+	<tr valign="top">
+		<td class="caption">Name</td>
+		<td><input type="text" name="item[name]" size="90" style="width:100%"/></td>
+		<td class="comment">Separate aliases with ";".</td>
+	</tr>
+	<tr valign="top">
+		<td class="caption">Tags</td>
+		<td><input type="text" name="item[tags]" size="60" style="width:100%"/></td>
+		<td class="comment">Separate tags with space.</td>
+	</tr>
+	<tr valign="top">
+		<td class="caption">SQL</td>
+		<td>
+			<textarea id="sql" name="item[sql]" cols="80" rows="8" style="width:100%"></textarea>
 		</td>
 		<td class="comment">
 			Available marcos are:
@@ -57,22 +57,11 @@
 	</tr>
 	<tr valign="top" id="action_bar">
 		<td><br/></td>
-		<td>
-			<br/>
-			
-			<div style="float:right">
+		<td style="padding-top: 10px">
+			<div style="float:right; text-align:right">
 				<input type="hidden" name="item[archived]" value="0" />
 				<input type="checkbox" id="archived" name="item[archived]" value="1" default="0" />
 				<label for="archived">Archived (hidden, but calculated)</label><br/>
-			</div>
-
-			<div>
-				<input type="hidden" name="item[recalculatable]" value="0" />
-				<input type="checkbox" id="recalculatable" name="item[recalculatable]" value="1" default="1" />
-				<label for="recalculatable" style="margin-right:3em">Could be recalculated to the past</label>
-			</div>
-			
-			<div style="float:right">
 				<input type="submit" name="doTest" value="Test" /> or
 				<input type="submit" name="doRecalc" value="Recalc" />
 				from <input type="text" name="to" size="4" default="now"/> back <input type="text" name="back" size="4" default="14"/>
@@ -80,7 +69,13 @@
 			</div>
 
 			<div>
-				<input type="submit" name="doSave" value="<?=@$_POST['item']['id']? "Save" : "Add"?>"/>
+				<input type="hidden" name="item[recalculatable]" value="0" />
+				<input type="checkbox" id="recalculatable" name="item[recalculatable]" value="1" default="1" />
+				<label for="recalculatable" style="margin-right:3em">Could be recalculated to the past</label>
+			</div>
+
+			<div>
+				<input type="submit" style="width:100px" name="doSave" value="<?=@$_POST['item']['id']? "Save" : "Add"?>"/>
 				<?if (@$_POST['item']['id']) {?>
 					<input type="submit" name="doDelete" confirm="Are you sure you want to delete this item?" value="Delete" style="margin-left:1em"/>
 					<input type="submit" name="doClear" confirm="Are you sure you want to clear all data for this item?" value="Clear" style="margin-left:1em"/>

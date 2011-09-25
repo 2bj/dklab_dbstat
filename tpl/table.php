@@ -1,17 +1,20 @@
 <?$COLORS = array("holiday" => "red", "incomplete" => "#BBBBBB")?>
 
-<?if ($tags && !isCgi()) {?>
+<?if ($tagsSubmenu && !isCgi()) {?>
 	<div style="margin-bottom:3px">
-	<?include "tags.php"?>
+		Tags:&nbsp;&nbsp;
+		<?foreach ($tagsSubmenu as $url => $info) {?>
+			<a href="<?=$url?>"><?=$info['title']?></a><sup style="color:gray"><?=$info['count']?></sup>&nbsp;&nbsp;
+		<?}?>
 	</div>
 <?}?>
 
 <table cellpadding="3" cellspacing="1" border="0" bgcolor="#CCCCCC">
-<thead bgcolor="#EEEEEE">
+<thead bgcolor="#F5F5F5">
 	<tr align="center" valign="top">
-		<td width="1" align="left"><b>Name</b></td>
-		<td width="1"><b>TOT</b></td>
-		<td width="1"><b>AVG</b></td>
+		<td width="1" align="left" valign="middle"><b>Name</b></td>
+		<td width="1" valign="middle"><b>TOT</b></td>
+		<td width="1" valign="middle"><b>AVG</b></td>
 		<td><br/></td>
 		<?foreach ($table['captions'] as $interval) {?>
 			<?
@@ -26,7 +29,7 @@
 	</tr>
 </thead>
 
-<tbody>
+<tbody class="table_data">
 	<?$hasArchived = 0?>
 	<?$i = -1; foreach ($table['groups'] as $groupName => $group) { $i++; ?>
 		<?foreach ($group as $rowName => $row) {?>

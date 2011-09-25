@@ -5,6 +5,7 @@ require_once "lib/config.php";
 require_once "HTML/FormPersister.php";
 require_once "Mail/Simple.php";
 require_once "PDO/Simple.php";
+require_once "Tools/TimeSeriesAxis.php";
 
 define("TAGS_SEP", "|");
 
@@ -44,7 +45,7 @@ if (get_magic_quotes_gpc()) {
 		}
 	}
 }
-
+define("LOGGED_IN", true);
 
 /**
  * Initially creates a database connection and applies all migrations
@@ -83,6 +84,11 @@ function createDbConnection()
  */
 function template($__name, $__args = array(), $noLayout = false, $noQuote = false)
 {
+	// Assign variables available everywhere.
+	$__args['menu'] = getPageMenu();
+	$__args['tagsSubmenu'] = getTagsSubmenu();
+	$__args['base'] = preg_replace("{/[^/]*$}s", "/", getSetting("index_url"));
+
 	if (!$noQuote) {
 		$t0 = microtime(true);
 		$__args = htmlspecialchars_recursive($__args);
@@ -90,10 +96,8 @@ function template($__name, $__args = array(), $noLayout = false, $noQuote = fals
 	}
 	extract($__args);
 
-	// Assign variables available everywhere.
-	$tags = getAllTags();
-	$base = preg_replace("{/[^/]*$}s", "/", getSetting("index_url"));
-
+	// Process the template.
+	ob_start();
 	$__cwd = getcwd();
 	chdir(dirname(__FILE__) . "/tpl");
 	if (!$noLayout) require "_header.php";
@@ -102,6 +106,11 @@ function template($__name, $__args = array(), $noLayout = false, $noQuote = fals
 //	echo sprintf("Templating of %s took %d ms<br>", $__name, (microtime(true) - $t0) * 1000);
 	if (!$noLayout) require "_footer.php";
 	chdir($__cwd);
+	$content = ob_get_clean();
+
+	// Strip trailing spaces after lines ended with "\".
+	$content = preg_replace('/\\\\\r?\n\s*(<)/s', '$1', $content);
+	echo $content;
 }
 
 
@@ -503,7 +512,19 @@ function fetchItem($id)
 	return $item;
 }
 
-function getAllTags()
+function getIndexUrl($tag)
+{
+	$periods = getPeriods();
+	$params = array();
+	if (strlen($tag)) $params['tag'] = $tag;
+	if (strlen(@$_GET['period'])) $params['period'] = $_GET['period'];
+	if (strlen(@$_GET['to'])) $params['to'] = $_GET['to'];
+	$params = http_build_query($params);
+	$url = "index.php" . (strlen($params)? "?" . $params : "");
+	return $url;
+}
+
+function getTagsSubmenu()
 {
 	global $DB;
 	$rows = $DB->select("SELECT tags FROM item");
@@ -514,7 +535,15 @@ function getAllTags()
 		}
 	}
 	ksort($tags);
-	return $tags;
+	$tagsMenu = array();
+	foreach ($tags as $tag => $count) {
+		$url = getIndexUrl($tag);
+		$tagsMenu[$url] = array(
+			'title' => $tag,
+			'count' => $count,
+		);
+	}
+	return $tagsMenu;
 }
 
 function recalcItemRow($itemId, $to, $back, $period)
@@ -697,5 +726,66 @@ function setSetting($name, $value)
 		$DB->update("UPDATE setting SET value=? WHERE name=?", $value, $name);
 	} else {
 		$DB->update("INSERT INTO setting(name, value) VALUES(?, ?)", $name, $value);
+	}
+}
+
+function getPageMenu()
+{
+	$tagsSubmenu = array();
+	if (!isCgi() || defined('LOGGED_IN')) {
+		$tagsSubmenu = getTagsSubmenu();
+	}
+	
+	foreach ($tagsSubmenu as $url => $info) {
+		$tagsSubmenu[$url]['title'] = 'Tag: ' . $info['title'];
+	}
+	
+	$firstUrl = getIndexUrl("");
+	$firstTitle = "All items";
+	foreach ($tagsSubmenu as $url => $info) {
+		if (isCurUrl($url, false)) {
+			$tagsSubmenu = array_merge(array($firstUrl => array('title' => $firstTitle, 'count' => '')), $tagsSubmenu);
+			$firstUrl = "index.php";
+			$firstTitle = $info['title'];
+		}
+	}
+	
+	$menu = array(
+		$firstUrl => array(
+			"title" => $firstTitle,
+			"submenu" => $tagsSubmenu,
+		),
+		"item.php" => array(
+			"title" => "Add an item",
+		),
+		"dsns.php" => array(
+			"title" => "Databases",
+		),
+		"settings.php" => array(
+			"title" => "Settings",
+		),
+	);
+	if (defined('LOGGED_IN')) {
+		$menu["logout.php"] = array("title" => "Log out");
+	}
+	foreach ($menu as $url => $info) {
+		$menu[$url]['current'] = isCurUrl($url, true);
+		if (@$info['submenu']) {
+			foreach ($info['submenu'] as $subUrl => $subInfo) {
+				$menu[$url]['submenu'][$subUrl]['current'] = isCurUrl($subUrl, false);
+			}
+		}
+	}
+	return $menu;
+}
+
+function isCurUrl($url, $isTopLevel)
+{
+	$curUri = preg_replace('{/(?=\?|$)}s', '/index.php', $_SERVER['REQUEST_URI']);
+	if (preg_match('/item.php\?id=/s', $curUri)) return false;
+	if ($isTopLevel) {
+		return basename(preg_replace('/\?.*/s', '', $curUri)) == basename(preg_replace('/\?.*/s', '', $url));
+	} else {
+		return basename($curUri) == basename($url);
 	}
 }

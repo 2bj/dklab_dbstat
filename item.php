@@ -38,6 +38,7 @@ if (!empty($_POST['doClear'])) {
 			list ($to, $back, $period) = parseToBackPeriod($_POST);
 			$periods = $period? array($period) : array_keys(getPeriods()); 
 			$tables = array();
+			$hideLogJs = '</div><script type="text/javascript">document.getElementById("log").style.display="none"</script>';
 			try {
 				echo '<div id="log">';
 				foreach ($periods as $period) {
@@ -46,9 +47,9 @@ if (!empty($_POST['doClear'])) {
 					$periods = getPeriods();
 					$tables[$periods[$period]] = generateHtmlTableFromData($data);
 				}
-				echo '</div><script type="text/javascript">document.getElementById("log").style.display="none"</script>';
+				echo $hideLogJs;
 			} catch (Exception $e) {
-				echo '</div><br/><style>#log { color: red; border: 3px solid red; padding: 4px; }</style>';
+				echo $hideLogJs;
 				throw $e;
 			}
 			if (!empty($_POST['doTest'])) {
@@ -99,7 +100,10 @@ if (!$tables && $id) {
 	}
 }
 
-$title = $id? 'Edit item <a href="' . htmlspecialchars($_SERVER['REQUEST_URI']) . '">' . htmlspecialchars($_POST['item']['name']) . '</a>' : "Add a new item";
+$title = $id
+	? 'Edit item <a href="' . htmlspecialchars($_SERVER['REQUEST_URI']) . '">' . htmlspecialchars($_POST['item']['name']) . '</a>' .
+	  '&nbsp;<a href="item.php?clone=' . htmlspecialchars($id) . '" title="Clone this item"><img src="static/clone.gif" width="10" height="10" border="0" /></a>'
+	: "Add a new item";
 template(
 	"item", 
 	array(

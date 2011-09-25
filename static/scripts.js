@@ -125,12 +125,45 @@ function hideGraph(graph) {
 }
 
 
+jQuery.fn.disableSelection = function() {
+    this.each(function() {
+            this.onselectstart = function() { return false; };
+            this.unselectable = "on";
+            jQuery(this).css('-moz-user-select', 'none');
+    });
+    return this;
+};
+
+
+//
+// Initialize top menu.
+// 
+(function() {
+	$('#header .triangle_down, #header .current .real a.main_menu_link').mousedown(function() {
+		$(this).closest('.item').find('.submenu').toggle();
+	});
+})();
+
+
 //
 // Initialize checkboxes & graphs.
 //
 (function() {
 	if (!$('.chk').length) return;
 
+	if ($(".archived")[0]) {
+		$('#showHideDiv').show();
+		if (location.hash.match(/^#(\d+)$/)) $('.id' + RegExp.$1).show();
+		$('#showHideDiv span').disableSelection().mousedown(function() {
+			$('.archived').toggle();
+			$('#showHideDiv span').toggle();
+		});
+	}
+	
+	$(".table_data tr").click(function() {
+		$(this).toggleClass('clicked');
+	});
+	
 	google.load('visualization', '1.0', {'packages':['corechart']});
 	google.setOnLoadCallback(function() {
 		google.loaded = true;
@@ -194,6 +227,7 @@ function hideGraph(graph) {
 		}
 
 		lastClickedChk = chk;
+		setTimeout(function() { $(chk).closest('tr').removeClass('clicked') }, 100);
 	});
 })();
 
@@ -205,6 +239,9 @@ function hideGraph(graph) {
 	if (!$('#sql').length) return;
 
 	var $sql = $('#sql');
+	var commentsWidth = $sql.closest('tr').find('.comment').width();
+	var captionWidth = $sql.closest('tr').find('td:first').width();
+	var paddingsAndGaps = 48;
 	
 	window.editor = CodeMirror.fromTextArea($sql[0], {
 		lineNumbers: false,
@@ -224,7 +261,7 @@ function hideGraph(graph) {
 		var heightWithoutEditor = $e.offset().top + $('#action_bar').outerHeight();
 		var editorHeight = $(window).height() - heightWithoutEditor - 25;
 		if (editorHeight < 100) editorHeight = 100;
-		var editorWidth = $(window).width() - $e.offset().left - 250;
+		var editorWidth = $(window).width() - commentsWidth - captionWidth - paddingsAndGaps;
 		$e.css("height", editorHeight + "px");
 		$e.css("width", editorWidth + "px");
 	}

@@ -1,11 +1,153 @@
 html, body {
-	height: 100%;
+	background: #FFF;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-family: Verdana;
+	font-size: 16px;
+    color: #333;
+}
+
+body {
+    line-height: 1.4;
+}
+
+a {
+    color: #15C;
+    border: 0;
+}
+
+img {
+    border: 0;
+}
+
+#header {
+	width: 100%;
+    padding-top: 8px;
+}
+
+#header_background {
+	position: absolute;
+	background: #F5F5F5;
+	width: 100%;
+	height: 100px;
+}
+
+#header .logo {
+    float: left;
+    width: 108px;
+    margin: 2px 24px 0;
+    z-index: 10;
+}
+
+#header .logo img {
+	position: absolute;
+	z-index: 10;
+}
+
+#header a {
+    text-decoration: none;
+    color: #333;
+}
+
+#header a:hover {
+    text-decoration: underline;
+}
+
+#header .shadow {
+    visibility: hidden;
+}
+
+#header .current {
+	font-weight: bold;
+    color: #DD4B39;
+}
+
+#header .menu .item {
+    float: left;
+}
+
+#header .menu .item .count {
+	color: #BBB;
+	padding-left: 0.2em;
+	font-size: 80%;
+	vertical-align: top;
+}
+
+#header .menu .item .inner {
+    padding: 16px 20px;
+}
+
+#header .menu .right {
+    float: right;
+}
+
+#header .menu .current {
+    font-weight: bold;
+}
+
+#header .menu .current a {
+    color: #DD4B39;
+}
+
+#header .menu .item .real {
+    position: absolute;
+    z-index: 100;
+    margin-top: 1px;
+    margin-left: 1px;
+}
+
+#header .menu .current .real {
+    background: white;
+    font-weight: bold;
+    margin-top: 0;
+    margin-left: 0;
+    border: 1px solid #DEDEDE;
+    border-bottom: none;
+}
+
+img.triangle_down {
+	width: 16px;
+	height: 16px;
+	margin-right: 4px;
+	cursor: pointer; cursor: hand;
+}
+
+#header .menu .item .submenu {
+    margin-top: 0;
+    margin-left: 0;
+    margin-top: 0;
+    position: absolute;
+    z-index: 200;
+	border: 1px solid #DEDEDE;
+	background: #fff;
+	display: none;
+}
+
+#header .menu .item .submenu .submenu_item a {
+	padding-left: 20px;
+	font-weight: normal;
+    color: #333;
+}
+
+#header .menu .item .submenu .submenu_item a.current {
+	font-weight: bold;
+}
+
+#text {
+	clear: both;
+	padding: 0 1.5em;
+	background: #FFF;
+    border: 1px solid #DEDEDE;
+    border-bottom: none;
+    z-index: 1;
+    position: relative;
 }
 
 .message {
 	border: 1px dashed red;
 	awidth: 100%;
-	padding: 4px;
+	padding: 8px;
 	margin-bottom: 0.5em;
 }
 
@@ -35,10 +177,6 @@ ul {
    border: 0px solid gray;
 }
 
-tr.checked {
-	background: #FAFAFA;
-}
-
 td.check, td.check input {
 	cursor: pointer;
 }
@@ -61,6 +199,7 @@ td.check, td.check input {
 	border: 1px solid red;
 	padding: 1em;
 	display: none;
+	z-index: 10000;
 }
 
 #ajax_test_sql_result .head {
@@ -75,4 +214,39 @@ td.check, td.check input {
 
 .sql_ok {
 	border-color: #00DD00;
+}
+
+.caption {
+	padding-right: 8px;
+}
+
+#showHideDiv span {
+	margin-left: 32px;
+	text-decoration: none;
+	border-bottom: 1px dashed #15C;
+	color: #15C;
+	cursor: pointer; cursor: hand;
+}
+
+.table_data tr.clicked {
+	background: #F5F5F5;
+}
+
+tr.checked {
+	background: #F5F5F5;
+}
+
+.table_data tr:hover {
+	background: #F5F5F5;
+}
+
+.form_table_head td {
+	background: #F5F5F5;
+	font-weight: bold;
+	padding: 0 4px;
+}
+
+.form_table_body td {
+	background: #FAFAFA;
+	padding: 0 4px;
 }
