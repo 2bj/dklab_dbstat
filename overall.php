@@ -76,66 +76,6 @@ function createDbConnection()
 
 
 /**
- * Returns information about allowed accounting periods.
- *
- * @return array
- */
-function getPeriodsMetadata()
-{
-	$rows = array(
-		array(
-			"period" => "day",
-			"avg_len" => 3600 * 24,
-			"caption" => "Daily",
-			"uniq" => "Y-m-d",
-			"fmt" => "D\nM\nd"
-		),
-		array(
-			"period" => "week",
-			"avg_len" => 3600 * 24 * 7,
-			"caption" => "Weekly",
-			"uniq" => "getNextWeekendDate",
-			"fmt" => "D\nM\nd"
-		),
-		array(
-			"period" => "month",
-			"avg_len" => 3600 * 24 * 30,
-			"caption" => "Monthly",
-			"uniq" => "Y-m",
-			"fmt" => "M\nY"
-		),
-		array(
-			"period" => "quarter",
-			"avg_len" => 3600 * 24 * 30 * 3,
-			"caption" => "Quarterly",
-			"uniq" => "getQuarterName",
-			"fmt" => "getQuarterName"
-		),
-		array(
-			"period" => "total",
-			"avg_len" => 1e10,
-			"caption" => "Total",
-			"uniq" => "Y-m-d",
-			"fmt" => "D\nM\nd"
-		),
-	);
-	$result = array();
-	foreach ($rows as $row) {
-		$result[$row['period']] = $row;
-	}
-	return $result;
-}
-
-
-function getPeriodMetadata($period)
-{
-	$metadatas = getPeriodsMetadata();
-	if (!isset($metadatas[$period])) throw new Exception("No such period: $period");
-	return $metadatas[$period];
-}
-
-
-/**
  * Renders a template.
  *
  * @param string $__name
@@ -204,51 +144,6 @@ function unhtmlspecialchars($s)
 
 
 /**
- * Returns array of time intervals started from $to.
- * First interval is always staredr from $to, other intervals are $period-aligned.
- *
- * @return array   array(array("to" =>, "from" =>, "caption" =>, "complete"=>[true|false]), ...)
- */
-function getTimeSeries($to, $back, $period)
-{
-	if (!$back) $back = getSetting("cols", 30) + 1;
-	$metadata = getPeriodsMetadata();
-	$meta = getPeriodMetadata($period);
-	$minDate = @strtotime(getSetting("mindate", "1971-01-01"));
-	if (!$minDate) $minDate = 0;
-	// Find the minimum allowed grid step.
-	$decrement = 100000000;
-	foreach ($metadata as $v) {
-		$decrement = min($decrement, $v['avg_len']);
-	}
-	// Generate series.
-	$series = array();
-	for ($time = $to, $i = 0; $i < $back; $i++) {
-		if ($time < $minDate) break;
-		$from = $time;
-		$uniq = getUniqForTime($from, $meta);
-		while (getUniqForTime($from - $decrement, $meta) == $uniq) {
-			$from -= $decrement;
-		}
-		$from = trunkTime($from);
-		$caption = is_callable($meta['fmt'])? call_user_func($meta['fmt'], $time) : date($meta['fmt'], $time);
-		$series[] = array(
-			"uniq"          => $uniq,
-			"to"            => $time,
-			"from"          => $period != "total"? $from : 0,
-			"caption"       => $caption,
-			"period"        => $period,
-			"periodCaption" => $meta['caption'],
-			"is_complete"   => getUniqForTime($time, $meta) != getUniqForTime($time + 1, $meta), // boundary of 2 intervals
-			"is_holiday"    => preg_match('/SU|SA/i', $caption),
-		);
-		$time = $from - 1;
-	}
-	return $series;
-}
-
-
-/**
  * Truncate time to lower bound of minimum accounting interval (e.g. 1 day).
  *
  * @param int $time
@@ -256,57 +151,7 @@ function getTimeSeries($to, $back, $period)
  */
 function trunkTime($time)
 {
-	return strtotime(date('Y-m-d', $time));
-}
-
-
-/**
- * Returns uniq key for an interval which includes $time value,
- *
- * @param int $time
- * @param array $meta
- * @return string
- */
-function getUniqForTime($time, $meta)
-{
-	static $cache = array();
-	$fmt = $meta['uniq'];
-	if (isset($cache[$fmt][$time])) {
-		return $cache[$fmt][$time];
-	}
-	if (is_callable($fmt)) {
-		$u = call_user_func($fmt, $time);
-	} else {
-		$u = date($fmt, $time);
-	}
-	return $cache[$fmt][$time] = $u;
-}
-
-
-/**
- * Helper function: return a date of the next weekend.
- *
- * @param int $time
- * @return int
- */
-function getNextWeekendDate($time)
-{
-	while (date("w", $time) != 0) $time += 3600 * 24;
-	return date("Y-m-d", $time);
-}
-
-
-/**
- * Helper function: return the name of the quarter within which the time is.
- *
- * @param int $time
- * @return int
- */
-function getQuarterName($time)
-{
-	$mon = intval(date("m", $time));
-	$quart = intval(($mon - 1) / 3) + 1;
-	return "Q" . $quart . "\n" . date("Y", $time);
+	return Tools_TimeSeriesAxis::trunkTime($time);
 }
 
 
@@ -317,11 +162,18 @@ function getQuarterName($time)
  */
 function getPeriods()
 {
-	$result = array();
-	foreach (getPeriodsMetadata() as $period => $info) {
-		$result[$period] = $info['caption'];
-	}
-	return $result;
+	return Tools_TimeSeriesAxis::getPeriods();
+}
+
+
+/**
+ * Alias for Tools_TimeSeriesAxis::getAxis() with $minDate from config.
+ *
+ * @return array
+ */
+function getAxis($to, $back, $period)
+{
+	return Tools_TimeSeriesAxis::getAxis($to, $back, $period, @strtotime(getSetting("mindate", "1971-01-01")));
 }
 
 
@@ -338,8 +190,8 @@ function getPeriods()
 function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNames = null, $onlyReName = null)
 {
 	global $DB;
-	$meta = getPeriodMetadata($period);
-	$series = array_values(getTimeSeries($to, $back, $period));
+	$meta = Tools_TimeSeriesAxis::getPeriodMetadata($period);
+	$series = array_values(getAxis($to, $back, $period));
 	$to = $series[0]["to"];
 	$from = $series[count($series) - 1]["from"];
 
@@ -422,7 +274,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			$names[$name] = array();
 		}
 		if ($cell['data_id']) {
-			$uniq = getUniqForTime($cell['created'], $meta);
+			$uniq = Tools_TimeSeriesAxis::getUniqForTime($cell['created'], $meta);
 			if (!isset($names[$name][$uniq])) {
 				$cell['percent'] = (is_numeric($cell['relative_value']) && $cell['relative_value']? ($cell['value'] / $cell['relative_value'] * 100) : null);
 				$names[$name][$uniq] = $cell;
@@ -668,7 +520,7 @@ function getAllTags()
 function recalcItemRow($itemId, $to, $back, $period)
 {
 	global $DB;
-	$series = getTimeSeries($to, $back, $period);
+	$series = getAxis($to, $back, $period);
 	$item = $DB->selectRow("SELECT * FROM item WHERE id=?", $itemId);
 	foreach ($series as $interval) {
 		recalcItemCell($item, $interval);
