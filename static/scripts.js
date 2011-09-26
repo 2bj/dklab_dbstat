@@ -127,11 +127,23 @@ function hideGraph(graph) {
 
 jQuery.fn.disableSelection = function() {
     this.each(function() {
-            this.onselectstart = function() { return false; };
-            this.unselectable = "on";
-            jQuery(this).css('-moz-user-select', 'none');
+        this.onselectstart = function() { return false; };
+        this.unselectable = "on";
+        jQuery(this).css('-moz-user-select', 'none');
     });
     return this;
+};
+
+
+// Runs much faster than default toggle() or show/hide.
+jQuery.fn.fastToggle = function(disp, onOff) {
+    this.each(function() {
+        if (onOff !== undefined) {
+            this.style.display = (onOff? disp : 'none');
+        } else {
+            this.style.display = ($(this).css('display') == 'none'? disp : 'none');
+        }
+    });
 };
 
 
@@ -140,7 +152,7 @@ jQuery.fn.disableSelection = function() {
 // 
 (function() {
 	$('#header .triangle_down, #header .current .real a.main_menu_link').mousedown(function() {
-		$(this).closest('.item').find('.submenu').toggle();
+		$(this).closest('.item').find('.submenu').fastToggle('block');
 	});
 })();
 
@@ -152,11 +164,15 @@ jQuery.fn.disableSelection = function() {
 	if (!$('.chk').length) return;
 
 	if ($(".archived")[0]) {
-		$('#showHideDiv').show();
+	    var $showHideDiv = $('#showHideDiv');
+	    var archivedShown = false;
+		$showHideDiv.show();
 		if (location.hash.match(/^#(\d+)$/)) $('.id' + RegExp.$1).show();
-		$('#showHideDiv span').disableSelection().mousedown(function() {
-			$('.archived').toggle();
-			$('#showHideDiv span').toggle();
+		$showHideDiv.find('span').disableSelection().mousedown(function() {
+		    archivedShown = !archivedShown;
+			$('tr.archived').fastToggle('table-row', archivedShown);
+			$showHideDiv.find('span').show();
+			$(this).hide();
 		});
 	}
 	

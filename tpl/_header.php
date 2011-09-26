@@ -8,7 +8,6 @@
 </head>
 <body>
 
-<?ob_start()?>
 <div id="header_background"></div>
 <div id="header">
 	<div class="logo">
@@ -17,10 +16,7 @@
     <div class="menu">
         <?foreach ($menu as $url => $info) {?>
             <?ob_start()?>
-				<?if (@$info['submenu']) {?>
-					<img src="static/triangle_down.gif" class="triangle_down"/>\
-				<?}?>
-				<a href="<?=$url?>" class="main_menu_link"><?=$info['title']?></a>
+				<?if (@$info['submenu']) {?><img src="static/triangle_down.gif" class="triangle_down"/><?}?><a href="<?=$url?>" class="main_menu_link"><?=$info['title']?></a>
 			<?$link = ob_get_clean()?>
             
             <div class="item <?=$info['current']? 'current' : ''?> <?=$url == "logout.php"? "right" : ""?>">
@@ -44,7 +40,6 @@
         <?}?>
     </div>
 </div>
-<?=preg_replace('{(>)\s+(<)}s', '$1$2', ob_get_clean())?>
 
 <div id="text">
 

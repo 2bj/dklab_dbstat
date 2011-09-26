@@ -104,7 +104,6 @@ function template($__name, $__args = array(), $noLayout = false, $noQuote = fals
 	extract($__args);
 
 	// Process the template.
-	ob_start();
 	$__cwd = getcwd();
 	chdir(dirname(__FILE__) . "/tpl");
 	if (!$noLayout) require "_header.php";
@@ -113,11 +112,6 @@ function template($__name, $__args = array(), $noLayout = false, $noQuote = fals
 //	echo sprintf("Templating of %s took %d ms<br>", $__name, (microtime(true) - $t0) * 1000);
 	if (!$noLayout) require "_footer.php";
 	chdir($__cwd);
-	$content = ob_get_clean();
-
-	// Strip trailing spaces after lines ended with "\".
-	$content = preg_replace('/\\\\\r?\n\s*(<)/s', '$1', $content);
-	echo $content;
 }
 
 
