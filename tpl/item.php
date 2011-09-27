@@ -47,7 +47,7 @@
 			<textarea id="sql" name="item[sql]" cols="80" rows="8" style="width:100%"></textarea>
 		</td>
 		<td class="comment">
-			Available marcos are:
+			Available macros are:
 			<ul>
 			<li><b>$FROM</b>: period start (TIMESTAMP)</li>
 			<li><b>$TO</b>: period end (TIMESTAMP)</li>

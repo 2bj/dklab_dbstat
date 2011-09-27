@@ -96,6 +96,11 @@ if (!$tables && $id) {
 	if (!$to) $to = time();
 	foreach ($SELECT_PERIODS as $period => $periodName) {
 		$data = generateTableData($to, $PREVIEW_TABLES_COLS, $period, $id);
+		foreach ($data['groups'] as $gKey => $gContent) {
+		    foreach ($gContent as $iKey => $iContent) {
+		        $data['groups'][$gKey][$iKey]['archived'] = false;
+		    }
+		}
 		$tables[$periodName] = generateHtmlTableFromData($data);
 	}
 }

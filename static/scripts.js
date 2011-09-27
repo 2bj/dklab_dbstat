@@ -25,8 +25,8 @@ function getValuesOfRows(trs) {
 	});
 	
 	var data = [];
-	var $headTds = $(trs[0]).closest('table').find('tr:first').children('td').slice(POS_DATA);
-	$.each($headTds, function(i) {
+	var headTds = $($(trs[0]).closest('table')[0].firstChild.firstChild).find('td').slice(POS_DATA);
+	$.each(headTds, function(i) {
 		var $headTd = $(this);
 		var col = [];
 		col.push($headTd.html().replace(/<.*?>/g, ' '));
@@ -58,7 +58,7 @@ function getValuesOfRows(trs) {
 }
 
 
-function showGraph(trs, x, yTop, yBottom, w, h) {
+function showGraph(trs, x, xl, yTop, yBottom, w, h) {
 	var values = getValuesOfRows(trs);
 	if (!values.data.length) return;
 
@@ -66,24 +66,34 @@ function showGraph(trs, x, yTop, yBottom, w, h) {
 	if (!w) {
 		w = GRAPH_WIDTH;
 	} else if (w.tagName) {
-		var right = $(w).offset().left + $(w).outerWidth();
-		var winRight = $(window).scrollLeft() + $(window).width() - 1;
+	    var left = $(w).offset().left;
+	    var winLeft = $(window).scrollLeft()
+		if (left < winLeft) left = winLeft;
+
+		var right = left + $(w).outerWidth();
+		var winRight = winLeft + $(window).width() - 1;
 		if (right > winRight) right = winRight;
-		w = right - x + 1;
+
+		if (x < (left + right) / 2 || (right - x) > 300) {
+			w = right - x + 1;
+	    } else {
+	        w = xl - left;
+	        x = left;
+	    }
 	}
 	if (!h) h = GRAPH_HEIGHT;
 	var y = yBottom;
 	if (y + h > $(window).scrollTop() + $(window).height() - 40) {
 		y = yTop - h;
 	}
-	var $target = $('<div class="graph"></div>').appendTo(document.body).css({ 
+	var $target = $('#graph').css({
 		width: (w - gap * 2) + "px",
 		height: (h - gap * 2) + "px",
 		left: x + "px",
 		top: y + "px",
 		padding: GRAPH_PADDING + "px",
 		borderWidth: GRAPH_BORDER + "px"
-	});
+	}).show();
 	
 	var data = new google.visualization.DataTable();
 	data.addColumn('string', 'Date');
@@ -121,46 +131,41 @@ function showGraph(trs, x, yTop, yBottom, w, h) {
 
 function hideGraph(graph) {
 	if (!graph) return;
-	$(graph).remove();
+	$(graph).hide();
 }
 
 
-jQuery.fn.disableSelection = function() {
-    this.each(function() {
-        this.onselectstart = function() { return false; };
-        this.unselectable = "on";
-        jQuery(this).css('-moz-user-select', 'none');
-    });
-    return this;
-};
-
-
-// Runs much faster than default toggle() or show/hide.
-jQuery.fn.fastToggle = function(disp, onOff) {
-    this.each(function() {
-        if (onOff !== undefined) {
-            this.style.display = (onOff? disp : 'none');
-        } else {
-            this.style.display = ($(this).css('display') == 'none'? disp : 'none');
-        }
-    });
-};
-
-
-//
-// Initialize top menu.
-// 
-(function() {
-	$('#header .triangle_down, #header .current .real a.main_menu_link').mousedown(function() {
-		$(this).closest('.item').find('.submenu').fastToggle('block');
-	});
-})();
+$.fn.extend({
+    // Runs much faster than default toggle() or show/hide.
+    fastToggle: function(disp, onOff) {
+        this.each(function() {
+            if (onOff !== undefined) {
+                this.style.display = (onOff? disp : 'none');
+            } else {
+                this.style.display = ($(this).css('display') == 'none'? disp : 'none');
+            }
+        })
+    },
+    // Disables text selection e.g. on double-click.
+    disableSelection: function() {
+        this.each(function() {
+            this.onselectstart = function() { return false; };
+            this.unselectable = "on";
+            $(this).css('-moz-user-select', 'none');
+        });
+        return this;
+    }
+});
 
 
 //
 // Initialize checkboxes & graphs.
 //
-(function() {
+google.load('visualization', '1.0', {'packages':['corechart']});
+google.setOnLoadCallback(function() {
+	google.loaded = true;
+});
+$(function() {
 	if (!$('.chk').length) return;
 
 	if ($(".archived")[0]) {
@@ -180,10 +185,6 @@ jQuery.fn.fastToggle = function(disp, onOff) {
 		$(this).toggleClass('clicked');
 	});
 	
-	google.load('visualization', '1.0', {'packages':['corechart']});
-	google.setOnLoadCallback(function() {
-		google.loaded = true;
-	});
 	 
 	var lastCheckedChks = $('.chk:checked');
 	var lastClickedChk = null;
@@ -229,6 +230,7 @@ jQuery.fn.fastToggle = function(disp, onOff) {
 				lastShownGraph = showGraph(
 					rowsToUse, 
 					ofs.left + $td.outerWidth(),
+					ofs.left,
 					ofs.top, ofs.top + $td.outerHeight(),
 					$td.closest('tr')[0]
 				);
@@ -245,13 +247,13 @@ jQuery.fn.fastToggle = function(disp, onOff) {
 		lastClickedChk = chk;
 		setTimeout(function() { $(chk).closest('tr').removeClass('clicked') }, 100);
 	});
-})();
+});
 
 
 //
 // Initialize CodeMirror
 // 
-(function() {
+$(function() {
 	if (!$('#sql').length) return;
 
 	var $sql = $('#sql');
@@ -284,13 +286,13 @@ jQuery.fn.fastToggle = function(disp, onOff) {
 
 	adjustEditorSize();
 	$(window).resize(adjustEditorSize);
-})();
+});
 
 
 //
 // Initialize SQL checker.
 // 
-(function() {
+$(function() {
 	if (!$('#ajax_test_sql_result').length) return;
 	
 	var $sql = $('#sql');
@@ -348,4 +350,4 @@ jQuery.fn.fastToggle = function(disp, onOff) {
 	$dsnId.change(function() {
 		testSql($ajaxTestSqlResult[0], getSqlValue());
 	});
-})();
+});

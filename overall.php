@@ -11,10 +11,11 @@ define("TAGS_SEP", "|");
 
 // Initialize environment.
 if (isCgi() && defined("USE_GZIP")) {
-	ob_start("ob_gzhandler");
+	ob_start("ob_gzhandler", 9);
 }
 if (isCgi()) {
 	ob_start(array('HTML_FormPersister', 'ob_formpersisterhandler'));
+	header("Content-Type: text/html; charset=utf-8");
 }
 
 session_start();

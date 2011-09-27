@@ -4,11 +4,17 @@
 	<title>DBStat: <?=$title?></title>
 	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 	<script type="text/javascript" src="static/jquery-1.4.3.min.js"></script>
+	<script type="text/javascript" src="static/scripts.js?<?=filemtime('../static/scripts.js')?>"></script>
 	<link rel="stylesheet" href="static/styles.css?<?=filemtime('../static/styles.css')?>">
 </head>
 <body>
 
+<!-- Top background is positioned absolutely, because #header has no known height. -->
 <div id="header_background"></div>
+
+<!-- Pre-create graph DIV, because it is much faster in FF than appending it to document.body dynamically. -->
+<div id="graph" class="graph"></div>
+
 <div id="header">
 	<div class="logo">
 		<a href="index.php"><img src="static/logo.gif" width="108" height="43"/></a>
@@ -40,6 +46,12 @@
         <?}?>
     </div>
 </div>
+<script type="text/javascript">
+// Execute this before big page body is loaded.
+$('#header .triangle_down, #header .current .real a.main_menu_link').mousedown(function() {
+	$(this).closest('.item').find('.submenu').fastToggle('block');
+});
+</script>
 
 <div id="text">
 

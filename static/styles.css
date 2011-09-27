@@ -136,7 +136,7 @@ img.triangle_down {
 
 #text {
 	clear: both;
-	padding: 0 1.5em;
+	padding: 0 1.5em 1.5em;
 	background: #FFF;
     border: 1px solid #DEDEDE;
     border-bottom: none;
