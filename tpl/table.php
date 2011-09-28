@@ -4,7 +4,7 @@
 	<div style="margin-bottom:3px">
 		Tags:&nbsp;&nbsp;
 		<?foreach ($tagsSubmenu as $url => $info) {?>
-			<a href="<?=$url?>"><?=$info['title']?></a><sup style="color:gray"><?=$info['count']?></sup>&nbsp;&nbsp;
+			<a href="<?=$base . $url?>"><?=$info['title']?></a><sup style="color:gray"><?=$info['count']?></sup>&nbsp;&nbsp;
 		<?}?>
 	</div>
 <?}?>
