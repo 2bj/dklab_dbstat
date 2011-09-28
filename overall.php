@@ -425,8 +425,15 @@ function _sortFetchedData($a, $b)
  * @param array $table
  * @return string
  */
-function generateHtmlTableFromData($table)
+function generateHtmlTableFromData($table, $showArchived = false)
 {
+    if ($showArchived) {
+		foreach ($table['groups'] as $gKey => $gContent) {
+			foreach ($gContent as $iKey => $iContent) {
+				$table['groups'][$gKey][$iKey]['archived'] = false;
+			}
+		}
+	}
 	$period = null;
 	if ($table['captions']) {
 		$firstInterval = current($table['captions']);

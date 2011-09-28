@@ -45,7 +45,7 @@ if (!empty($_POST['doClear'])) {
 					recalcItemRow($id, $to, $back, $period);
 					$data = generateTableData($to + 1, $back, $period, $id);
 					$periods = getPeriods();
-					$tables[$periods[$period]] = generateHtmlTableFromData($data);
+					$tables[$periods[$period]] = generateHtmlTableFromData($data, true);
 				}
 				echo $hideLogJs;
 			} catch (Exception $e) {
@@ -96,12 +96,7 @@ if (!$tables && $id) {
 	if (!$to) $to = time();
 	foreach ($SELECT_PERIODS as $period => $periodName) {
 		$data = generateTableData($to, $PREVIEW_TABLES_COLS, $period, $id);
-		foreach ($data['groups'] as $gKey => $gContent) {
-		    foreach ($gContent as $iKey => $iContent) {
-		        $data['groups'][$gKey][$iKey]['archived'] = false;
-		    }
-		}
-		$tables[$periodName] = generateHtmlTableFromData($data);
+		$tables[$periodName] = generateHtmlTableFromData($data, true);
 	}
 }
 
