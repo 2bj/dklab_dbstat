@@ -783,6 +783,7 @@ function getPageMenu()
 
 function isCurUrl($url, $isTopLevel)
 {
+    if (!isCgi()) return false;
 	$curUri = preg_replace('{/(?=\?|$)}s', '/index.php', $_SERVER['REQUEST_URI']);
 	if (preg_match('/item.php\?id=/s', $curUri)) return false;
 	if ($isTopLevel) {
