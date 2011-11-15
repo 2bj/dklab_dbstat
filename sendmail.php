@@ -17,8 +17,11 @@ if (isset($_SERVER['argv'][2])) {
 }
 $to = trunkTime($to); // mail is always sent for WHOLE periods
 
-$emails = getSetting('emails');
-if (!$emails) die("Please specify E-mail at Settings page");
+$emails = trim(getSetting('emails'));
+if ($period == 'month' && trim($emailsMonth = getSetting('emails_month'))) {
+    $emails .= ($emails? ", " : "") . $emailsMonth;
+}
+if (!$emails) die("Please specify E-mails to send stats at Settings page!\n");
 
 $data = generateTableData($to, $back, $period, null, null, $onlyReName); 
 $html = generateHtmlTableFromData($data);
@@ -30,6 +33,8 @@ $replyto = getSetting("replyto");
 $url = getSetting("index_url");
 
 foreach (preg_split('/\s*,\s*/s', $emails) as $email) {
+    $email = trim($email);
+    if (!$email) continue;
 	ob_start();
 	template(
 		"mail", 
@@ -46,4 +51,3 @@ foreach (preg_split('/\s*,\s*/s', $emails) as $email) {
 	$mail = preg_replace('{(?=<tr)|(?<=/tr>)}s', "\n", $mail);
 	Mail_Simple::mail($mail);
 }
-

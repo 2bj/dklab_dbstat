@@ -17,6 +17,12 @@
 	<td><input type="text" name="settings[emails]" size="50"/></td>
 	<td class="comment">Comma-delimited.</td>
 	</tr>
+
+	<tr valign="top">
+	<td align="right" class="caption">E-mails to send monthly stats</td>
+	<td><input type="text" name="settings[emails_month]" size="50"/></td>
+	<td class="comment">Comma-delimited.</td>
+	</tr>
 	
 	<tr valign="top">
 	<td align="right" class="caption">Reply-To E-mail</td>
