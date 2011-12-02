@@ -27,6 +27,7 @@ if (isCgi()) {
 writeLogLine(($fromId? "Continuing" : "Starting") . " recalculation.\n");
 
 $items = $DB->select("SELECT * FROM item WHERE id > ? ORDER BY id", $fromId); // ORDER BY id is IMPORTANT!
+writeLogLine(sprintf("We have %d items left to process.\n\n", count($items)));
 
 $hasError = false;
 $t0 = microtime(true);
