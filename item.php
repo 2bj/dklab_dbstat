@@ -2,7 +2,7 @@
 // No HTTP GZIP must be here!
 require_once "overall.php";
 
-$PREVIEW_TABLES_COLS = 30;
+$PREVIEW_TABLES_COLS = 40;
 
 $tables = null;
 $id = @$_GET['id']? @$_GET['id'] : @$_POST['item']['id'];
