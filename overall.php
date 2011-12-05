@@ -331,8 +331,8 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			$group = $m[1];
 			$name = $m[2];
 		}
-		$group = preg_replace('/^(\W*)\d+(\D+)/s', '$1$2', $group);
-		$name = preg_replace('/^(\W*)\d+(\D+)/s', '$1$2', $name);
+		$group = preg_replace('{(^|/)\d+}s', '$1', $group);
+		$name  = preg_replace('{(^|/)\d+}s', '$1', $name);
 		$cell = current($cells);
 		$table[$group][$name] = array(
 			"total"         => false,
