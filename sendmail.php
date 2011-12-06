@@ -23,8 +23,20 @@ if ($period == 'month' && trim($emailsMonth = getSetting('emails_month'))) {
 }
 if (!$emails) die("Please specify E-mails to send stats at Settings page!\n");
 
+// Generate the table data.
 $data = generateTableData($to, $back, $period, null, null, $onlyReName); 
+
+// Remove archived rows.
+foreach ($data['groups'] as $gName => $gRows) {
+    foreach ($gRows as $rName => $rInfo) {
+        if ($rInfo['archived']) unset($data['groups'][$gName][$rName]);
+    }
+    if (!$data['groups'][$gName]) unset($data['groups'][$gName]);
+}
+
+// Generate HTML.
 $html = generateHtmlTableFromData($data);
+
 $firstCaption = current($data['captions']);
 $SELECT_PERIODS = getPeriods();
 
