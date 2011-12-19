@@ -31,13 +31,15 @@
 
 <tbody class="table_data">
 	<?$hasArchived = 0?>
-	<?$i = -1; foreach ($table['groups'] as $groupName => $group) { $i++; ?>
-		<?foreach ($group as $rowName => $row) {?>
+    <?$zebra = array("#FFFFFF", !isCgi()? "FAFAFA" : "#FFFFFF")?>
+	<?$i = -1; $n = 0?>
+    <?foreach ($table['groups'] as $groupName => $group) { $i++; ?>
+		<?foreach ($group as $rowName => $row) { $n++; ?>
 			<tr 
 				id="<?=$row['item_id']?>"
 				<?=$row['archived']? 'style="display:none" class="archived id' . $row['item_id'] . '"' : ''?> 
 				<?=$row['relative_name']? 'title="Relative to ' . $row['relative_name'] . '"' : ""?> 
-				align="center" valign="middle" bgcolor="#FFFFFF" 
+				align="center" valign="middle" bgcolor="<?=$zebra[$n % 2]?>" 
 			>
 				<td nowrap="nowrap" align="left">
 					<?if (@$_SERVER['GATEWAY_INTERFACE']) {?>
