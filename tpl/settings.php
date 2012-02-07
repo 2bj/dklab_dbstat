@@ -55,6 +55,12 @@
 	</tr>
 
 	<tr valign="top">
+	<td align="right" class="caption">Go to this tag after login</td>
+	<td><input type="text" name="settings[tagafterlogin]" size="50"/></td>
+	<td class="comment">If set, only items tagged with such tag are shown after login.</td>
+	</tr>
+
+	<tr valign="top">
 	<td><br/></td>
 	<td><input type="submit" name="doSave" value="Save settings"/></td>
 	<td></td>

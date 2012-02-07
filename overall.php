@@ -27,7 +27,12 @@ if (isCgi() && !defined("NO_AUTH")) {
 		$cred = $_POST['auth']['login'] . ":" . $_POST['auth']['pass'];
 		if (getSetting("loginpass") === $cred) {
 			$_SESSION['credentials'] = $cred;
-			selfRedirect();
+			$tag = getSetting('tagafterlogin', "");
+			if (preg_match('{(/|index.php)$}s', $_SERVER['REQUEST_URI']) && $tag) {
+			    redirect("index.php?tag=" . urlencode($tag));
+			} else {
+				selfRedirect();
+			}
 		} else {
 			addMessage("Authentication failed.");
 		}
