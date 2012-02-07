@@ -45,9 +45,9 @@
         		<td><font color="#AAA"><?=$n?></font></td>
 				<td nowrap="nowrap" align="left">
 					<?if (@$_SERVER['GATEWAY_INTERFACE']) {?>
-						<a href="<?=$base?>item.php?clone=<?=$row['item_id']?>" title="Clone this item"><img src="<?=$base?>static/clone.gif" width="10" height="10" border="0" /></a>&nbsp;
+						<a href="<?=$base?>item.php?clone=<?=$row['item_id']?><?=isCgi()?'&retpath='.urlencode($_SERVER['REQUEST_URI']):''?>" title="Clone this item"><img src="<?=$base?>static/clone.gif" width="10" height="10" border="0" /></a>&nbsp;
 					<?}?>
-					<b><a style="text-decoration:none" href="<?=$base?>item.php?id=<?=$row['item_id']?>"><?=strlen($groupName)? $groupName . "/" : ""?><?=strlen($rowName)? $rowName : "&lt;none&gt;"?></a></b>&nbsp;
+					<b><a style="text-decoration:none" href="<?=$base?>item.php?id=<?=$row['item_id']?><?=isCgi()?'&retpath='.urlencode($_SERVER['REQUEST_URI']):''?>"><?=strlen($groupName)? $groupName . "/" : ""?><?=strlen($rowName)? $rowName : "&lt;none&gt;"?></a></b>&nbsp;
 				</td>
 				<td><?=$row['total']?></td>
 				<td><?=$row['average']?></td>
@@ -71,7 +71,7 @@
 						>
 							<?=$cell['value']?>
 							<?if (strlen($cell['percent'])) {?>
-								<font size="-2" color="#A0A0A0"><br/><?=sprintf(($cell['percent'] < 10? '%.1f' : '%d'), $cell['percent'])?>%</font>
+								<font size="-2" color="#A0A0A0"><br/><?=$cell['percent']?>%</font>
 							<?}?>
 						</td>
 					<?} else {?>

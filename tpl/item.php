@@ -23,7 +23,13 @@
 		<td width="1" class="caption">Options</td>
 		<td>
 			<select name="item[dsn_id]" id="dsn_id"><option value="">- Database -</option>SELECT_DSNS</select>
-			<select name="item[relative_to]" style="width:25em"><option value="">- Data is relative to -</option>SELECT_ITEMS</select>
+			<select name="item[relative_to]" style="width:25em">
+			    <option value="">- Data is relative to -</option>
+			    <option value="-3">- Previous monthly and above interval -</option>
+			    <option value="-4">- Previous weekly and above interval -</option>
+			    <option value="-5">- Previous daily and above interval -</option>
+			    SELECT_ITEMS
+			</select>
 			<select name="item[dim]" default="1">
 				<option value="1">Single value returned</option>
 				<option value="2">Column returned</option>
@@ -58,23 +64,26 @@
 	<tr valign="top" id="action_bar">
 		<td><br/></td>
 		<td style="padding-top: 10px">
-			<div style="float:right; text-align:right">
-				<input type="hidden" name="item[archived]" value="0" />
-				<input type="checkbox" id="archived" name="item[archived]" value="1" default="0" />
-				<label for="archived">Archived (hidden, but calculated)</label><br/>
-				<input type="submit" name="doTest" value="Test" /> or
-				<input type="submit" name="doRecalc" value="Recalc" />
-				from <input type="text" name="to" size="4" default="now"/> back <input type="text" name="back" size="4" default="14"/>
-				<select name="period"><option value="0">- ALL -</option>SELECT_PERIODS</select> periods
-			</div>
 
 			<div>
 				<input type="hidden" name="item[recalculatable]" value="0" />
 				<input type="checkbox" id="recalculatable" name="item[recalculatable]" value="1" default="1" />
 				<label for="recalculatable" style="margin-right:3em">Could be recalculated to the past</label>
 			</div>
+            <div>
+				<input type="hidden" name="item[archived]" value="0" />
+				<input type="checkbox" id="archived" name="item[archived]" value="1" default="0" />
+				<label for="archived">Archived (hidden, but calculated)</label>
+			</div>
 
-			<div>
+			<div style="margin-top: 4px">
+				<div style="float:right; text-align:right">
+					<input type="submit" name="doTest" value="Test" /> or
+					<input type="submit" name="doRecalc" value="Recalc" />
+					from <input type="text" name="to" size="4" default="now"/> back <input type="text" name="back" size="4" default="14"/>
+					<select name="period"><option value="0">- ALL -</option>SELECT_PERIODS</select> periods
+				</div>
+
 				<input type="submit" style="width:100px" name="doSave" value="<?=@$_POST['item']['id']? "Save" : "Add"?>"/>
 				<?if (@$_POST['item']['id']) {?>
 					<input type="submit" name="doDelete" confirm="Are you sure you want to delete this item?" value="Delete" style="margin-left:1em"/>

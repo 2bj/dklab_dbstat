@@ -239,7 +239,8 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 				c.id AS data_id, c.value, c.created, c.name AS data_name,
 				t.value AS total,
 				r.value AS relative_value,
-				ri.name AS relative_name
+				ri.name AS relative_name,
+				item.relative_to AS relative_to
 			FROM
 				item
 				LEFT JOIN data c ON (
@@ -275,7 +276,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 	// For each data cell compute its unique date point.
 	$t0 = microtime(true);
 	$names = array();
-	foreach ($cells as $cell) {
+	foreach ($cells as $i => $cell) {
 		$name = $cell['name'];
 		if ($cell['data_name']) {
             // Insert data name at the end of string and berore each ";" (for multi-named items).
@@ -287,7 +288,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 		if ($cell['data_id']) {
 			$uniq = Tools_TimeSeriesAxis::getUniqForTime($cell['created'], $meta);
 			if (!isset($names[$name][$uniq])) {
-				$cell['percent'] = (is_numeric($cell['relative_value']) && $cell['relative_value']? ($cell['value'] / $cell['relative_value'] * 100) : null);
+				$cell['percent'] = (is_numeric($cell['relative_value']) && $cell['relative_value']? _roundPercent($cell['value'] / $cell['relative_value'] * 100) : null);
 				$names[$name][$uniq] = $cell;
 			}
 		} else {
@@ -295,6 +296,30 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			$names[$name][""] = $cell;
 		}
 	}
+
+	// Calculate relative percentage.
+	$periodIndex = 0; // -1 - year, -2 - quarter, -3 - month, -4 - week, -5 - day etc.
+	foreach (array_reverse(Tools_TimeSeriesAxis::getPeriodsMetadata()) as $k => $v) {
+	    $periodIndex--;
+	    if ($k == $period) break;
+	}
+	foreach ($names as $name => $cells) {
+	    $cell = null;
+	    foreach ($cells as $k => $nextCell) {
+		    if ($cell && $cell['relative_to'] < 0 && $cell['relative_to'] <= $periodIndex) {
+		        $curVal = $cell['value'];
+		        $relVal = $nextCell['value'];
+		        $delta = ($curVal - $relVal) / $relVal * 100;
+		        $delta = _roundPercent($delta);
+		        $cell['percent'] = $delta < 0? $delta : '+' . $delta;
+		        $cell['relative_name'] = 'previous period value';
+		    }
+		    $cell =& $names[$name][$k];
+	    }
+	    unset($cell); // very important, because is ref!
+	}
+//	printr($names,1);
+
 //	echo sprintf("Split by uniq intervals took %d ms<br>", (microtime(true) - $t0) * 1000);
 
 	// Expand multi-place names.
@@ -359,7 +384,9 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 					$rr['average'] += $cell['value'];
 					$rr['average_filled']++;
 				}
-				$rr['relative_name'] = $cell['relative_name'];
+				if ($cell['relative_name']) {
+					$rr['relative_name'] = $cell['relative_name'];
+				}
 				$rr['item_id'] = $cell['item_id'];
 				$rr['cells'][$uniq] = $cell;
 				if ($i == 0) {
@@ -408,6 +435,13 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 		"groups"   => $table
 	);
 }
+
+
+function _roundPercent($p)
+{
+    return sprintf(($p < 10? '%.1f' : '%d'), $p);
+}
+
 
 function _sortFetchedData($a, $b)
 {
