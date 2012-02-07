@@ -12,6 +12,7 @@
 <table cellpadding="3" cellspacing="1" border="0" bgcolor="#CCCCCC">
 <thead bgcolor="#F5F5F5">
 	<tr align="center" valign="top">
+		<td width="1" align="middle" valign="middle"><b>#</b></td>
 		<td width="1" align="left" valign="middle"><b>Name</b></td>
 		<td width="1" valign="middle"><b>TOT</b></td>
 		<td width="1" valign="middle"><b>AVG</b></td>
@@ -41,6 +42,7 @@
 				<?=$row['relative_name']? 'title="Relative to ' . $row['relative_name'] . '"' : ""?> 
 				align="center" valign="middle" bgcolor="<?=$zebra[$n % 2]?>" 
 			>
+        		<td><font color="#AAA"><?=$n?></font></td>
 				<td nowrap="nowrap" align="left">
 					<?if (@$_SERVER['GATEWAY_INTERFACE']) {?>
 						<a href="<?=$base?>item.php?clone=<?=$row['item_id']?>" title="Clone this item"><img src="<?=$base?>static/clone.gif" width="10" height="10" border="0" /></a>&nbsp;
