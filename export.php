@@ -20,7 +20,7 @@ foreach ($csvs as $p => $data) {
     file_put_contents("$tmpDir/$p.csv", $data);
 }
 chdir($tmpDir) or die("Cannot chdir to '$tmpDir': " . error_get_last_msg());
-$destFile = "$tmpDir/dbstat.zip";
+$destFile = "$tmpDir/dbstat_" . date("Y-m-d_H-i") . ".zip";
 $cmd = "zip " . escapeshellarg($destFile) . " *.csv";
 exec($cmd, $out, $ret);
 if (!$ret) {

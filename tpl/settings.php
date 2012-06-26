@@ -61,6 +61,16 @@
 	</tr>
 
 	<tr valign="top">
+	<td align="right" class="caption">Fields separator for CSV export</td>
+	<td><select name="settings[csv_sep]">
+	    <option value=";">Semicolon (;)</option>
+	    <option value=",">Comma (,)</option>
+	    <option value="tab">Tab (\t)</option>
+	</select></td>
+	<td class="comment"></td>
+	</tr>
+
+	<tr valign="top">
 	<td><br/></td>
 	<td><input type="submit" name="doSave" value="Save settings"/></td>
 	<td></td>

@@ -502,32 +502,59 @@ function csvQuote($s)
 }
 
 
+function getSettingCsvSep()
+{
+    $sep = getSetting("csv_sep", ";");
+    if ($sep === "tab") $sep = "\t";
+    return $sep;
+}
+
+
 function generateCsvTableFromData($data)
 {
     //printr($data,1);
     $lines = array();
+    $lastColWithData = -1;
 
+    // Build caption line (order is reversed).
     $header = array();
-    $header[] = csvQuote("Title");
-    foreach (array_reverse($data['captions']) as $cap) {
+    foreach ($data['captions'] as $cap) {
         if (!$cap['is_complete']) continue;
-        $header[] = csvQuote(trim(preg_replace('/\s+/s', ' ', $cap['caption'])));
+        $header[] = trim(preg_replace('/\s+/s', ' ', $cap['caption']));
     }
-    $lines[] = join(";", $header);
+    $lines['Title'] = $header;
 
+    // Build rows (order of cols is reversed).
     foreach ($data['groups'] as $gname => $rows) {
         foreach ($rows as $iname => $row) {
             $cells = array();
-            $cells[] = csvQuote($iname);
-            foreach (array_reverse($row['cells']) as $cname => $cell) {
-                if (!$cell || !$cell['is_complete']) continue;
-                $cells[] = csvQuote($cell['value']);
+            $i = 0;
+            foreach ($data['captions'] as $uniq => $cap) {
+                if (!$cap['is_complete']) continue;
+                $cell = $row["cells"][$uniq];
+                $value = $cell? $cell['value'] : '';
+                $cells[] = $value;
+                if (strlen($value)) {
+                    $lastColWithData = max($lastColWithData, $i);
+                }
+                $i++;
             }
-            $lines[] = join(";", $cells);
+            $lines[$iname] = $cells;
         }
     }
 
-    return join("\r\n", $lines);
+    // Build CSV lines.
+    $sep = getSettingCsvSep();
+    foreach ($lines as $title => $row) {
+        $row = array_slice($row, 0, $lastColWithData + 1); // remain only non-empty cols
+        $row = array_reverse($row); // set direct time order
+        $row = array_merge(array($title), $row); // add left caption column
+        $row = array_map('csvQuote', $row);
+        $lines[$title] = join($sep, $row);
+    }
+
+    // Return data with BOM to support UTF-8 in Excel.
+    return "\xEF\xBB\xBF" . join("\r\n", $lines);
 }
 
 
