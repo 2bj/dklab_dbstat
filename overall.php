@@ -8,6 +8,7 @@ require_once "PDO/Simple.php";
 require_once "Tools/TimeSeriesAxis.php";
 
 define("TAGS_SEP", "|");
+define("PREVIEW_TABLES_COLS", 40);
 
 // Initialize environment.
 if (isCgi() && defined("USE_GZIP")) {
@@ -495,6 +496,41 @@ function generateHtmlTableFromData($table, $showArchived = false)
 }
 
 
+function csvQuote($s)
+{
+    return '"' . str_replace('"', '""', $s) . '"';
+}
+
+
+function generateCsvTableFromData($data)
+{
+    //printr($data,1);
+    $lines = array();
+
+    $header = array();
+    $header[] = csvQuote("Title");
+    foreach (array_reverse($data['captions']) as $cap) {
+        if (!$cap['is_complete']) continue;
+        $header[] = csvQuote(trim(preg_replace('/\s+/s', ' ', $cap['caption'])));
+    }
+    $lines[] = join(";", $header);
+
+    foreach ($data['groups'] as $gname => $rows) {
+        foreach ($rows as $iname => $row) {
+            $cells = array();
+            $cells[] = csvQuote($iname);
+            foreach (array_reverse($row['cells']) as $cname => $cell) {
+                if (!$cell || !$cell['is_complete']) continue;
+                $cells[] = csvQuote($cell['value']);
+            }
+            $lines[] = join(";", $cells);
+        }
+    }
+
+    return join("\r\n", $lines);
+}
+
+
 function selfRedirect($msg = null)
 {
 	if ($msg) addMessage($msg);
@@ -837,4 +873,28 @@ function isCurUrl($url, $isTopLevel)
 	} else {
 		return basename($curUri) == basename($url);
 	}
+}
+
+function glueUrl($a, $b)
+{
+    if (!strlen($a)) return $b;
+    return $a . (false === strpos($a, '?')? '?' : '&') . $b;
+}
+
+function glueQs($a, $b)
+{
+    if (!strlen($a)) return $b;
+    if (!strlen($b)) return $a;
+    return $a . "&" . $b;
+}
+
+function error_get_last_msg()
+{
+    $e = error_get_last();
+    return $e? strip_tags($e['message']) : null;
+}
+
+function generateTableDataFromGetArgs($to, $back, $period)
+{
+    return generateTableData($to, $back, $period, @$_GET['tag'], null, @$_GET['re']);
 }

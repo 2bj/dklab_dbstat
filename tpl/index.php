@@ -6,7 +6,12 @@
 		<span>Show archived rows</span>
 		<span style="display:none">Hide archived rows</span>
 	</span>
+    &nbsp;&nbsp;&nbsp;
+    Export as CSV:
+    <a href="export.php?<?=htmlspecialchars(glueQs($_SERVER['QUERY_STRING'], "period=$period"))?>">this period</a>,
+    <a href="export.php?<?=htmlspecialchars(glueQs($_SERVER['QUERY_STRING'], "period="))?>">all periods</a>
 </form>
+
 
 <?=unhtmlspecialchars($htmlTable)?>
 

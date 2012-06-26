@@ -2,8 +2,6 @@
 // No HTTP GZIP must be here!
 require_once "overall.php";
 
-$PREVIEW_TABLES_COLS = 40;
-
 $tables = null;
 $id = @$_GET['id']? @$_GET['id'] : @$_POST['item']['id'];
 
@@ -97,7 +95,7 @@ if (!$tables && $id) {
 	$to = $DB->selectCell("SELECT MAX(created) FROM data WHERE item_id=?", $id);
 	if (!$to) $to = time();
 	foreach ($SELECT_PERIODS as $period => $periodName) {
-		$data = generateTableData($to, $PREVIEW_TABLES_COLS, $period, $id);
+		$data = generateTableData($to, PREVIEW_TABLES_COLS, $period, $id);
 		$tables[$periodName] = generateHtmlTableFromData($data, true);
 	}
 }
