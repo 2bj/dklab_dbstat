@@ -1,4 +1,5 @@
 <?$COLORS = array("holiday" => "red", "incomplete" => "#BBBBBB")?>
+<?$hideCommonPrefix = getSetting('hide_common_prefix', 0)?>
 
 <?if ($tagsSubmenu && !isCgi()) {?>
 	<div style="margin-bottom:3px">
@@ -33,21 +34,22 @@
 <tbody class="table_data">
 	<?$hasArchived = 0?>
     <?$zebra = array("#FFFFFF", !isCgi()? "FAFAFA" : "#FFFFFF")?>
-	<?$i = -1; $n = 0?>
+	<?$i = -1; $n = 0; $caption = ''?>
     <?foreach ($table['groups'] as $groupName => $group) { $i++; ?>
 		<?foreach ($group as $rowName => $row) { $n++; ?>
+		    <?$prevCaption = $caption?>
+		    <?$caption = (strlen($groupName)? $groupName . "/" : "") . (strlen($rowName)? $rowName : "&lt;none&gt;")?>
 			<tr 
 				id="<?=$row['item_id']?>"
 				<?=$row['archived']? 'style="display:none" class="archived id' . $row['item_id'] . '"' : ''?> 
 				<?=$row['relative_name']? 'title="Relative to ' . $row['relative_name'] . '"' : ""?> 
-				align="center" valign="middle" bgcolor="<?=$zebra[$n % 2]?>" 
-			>
+				align="center" valign="middle" bgcolor="<?=$zebra[$n % 2]?>">
         		<td><font color="#AAA"><?=$n?></font></td>
 				<td nowrap="nowrap" align="left">
 					<?if (@$_SERVER['GATEWAY_INTERFACE']) {?>
 						<a href="<?=$base?>item.php?clone=<?=$row['item_id']?><?=isCgi()?'&retpath='.urlencode($_SERVER['REQUEST_URI']):''?>" title="Clone this item"><img src="<?=$base?>static/clone.gif" width="10" height="10" border="0" /></a>&nbsp;
 					<?}?>
-					<b><a style="text-decoration:none" href="<?=$base?>item.php?id=<?=$row['item_id']?><?=isCgi()?'&retpath='.urlencode($_SERVER['REQUEST_URI']):''?>"><?=strlen($groupName)? $groupName . "/" : ""?><?=strlen($rowName)? $rowName : "&lt;none&gt;"?></a></b>&nbsp;
+					<b><a style="text-decoration:none" href="<?=$base?>item.php?id=<?=$row['item_id']?><?=isCgi()?'&retpath='.urlencode($_SERVER['REQUEST_URI']):''?>"><?=$hideCommonPrefix? makeCommonPrefixTransparent($prevCaption, $caption, '/', 'color:#f5f5f5') : $caption?></a></b>&nbsp;
 				</td>
 				<td><?=$row['total']?></td>
 				<td><?=$row['average']?></td>

@@ -71,6 +71,15 @@
 	</tr>
 
 	<tr valign="top">
+	<td align="right" class="caption">Hide common prefixes of items</td>
+	<td><select name="settings[hide_common_prefix]">
+	    <option value="0">No</option>
+	    <option value="1">Yes</option>
+	</select></td>
+	<td class="comment"></td>
+	</tr>
+
+	<tr valign="top">
 	<td><br/></td>
 	<td><input type="submit" name="doSave" value="Save settings"/></td>
 	<td></td>

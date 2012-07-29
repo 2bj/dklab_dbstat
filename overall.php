@@ -925,3 +925,19 @@ function generateTableDataFromGetArgs($to, $back, $period)
 {
     return generateTableData($to, $back, $period, @$_GET['tag'], null, @$_GET['re']);
 }
+
+function makeCommonPrefixTransparent($prev, $cur, $delim, $style)
+{
+    $pCommon = 0;
+    for ($p = -1;;) {
+        $p = strpos($prev, $delim, $p + 1);
+        if ($p === false) break;
+        if (substr($prev, 0, $p + 1) !== substr($cur, 0, $p + 1)) break;
+        $pCommon = $p;
+    }
+    if ($pCommon) {
+        return "<span style=\"$style\">" . substr($cur, 0, $pCommon) . "</span>" . substr($cur, $pCommon);
+    } else {
+        return $cur;
+    }
+}
