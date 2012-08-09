@@ -31,6 +31,12 @@
 	</tr>
 
 	<tr valign="top">
+	<td align="right" class="caption">E-mail for "From" header</td>
+	<td><input type="text" name="settings[email_from]" size="50"/></td>
+	<td class="comment">Sometimes it is required to work-around spam filters.</td>
+	</tr>
+
+	<tr valign="top">
 	<td align="right" class="caption">Number of columns at the site</td>
 	<td><input type="text" name="settings[cols]" size="50"/></td>
 	<td></td>

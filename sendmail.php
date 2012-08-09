@@ -41,7 +41,9 @@ $firstCaption = current($data['captions']);
 $SELECT_PERIODS = getPeriods();
 
 $name = getSetting("instance");
-$replyto = getSetting("replyto");
+$replyTo = trim(getSetting("replyto", ""));
+$emailFrom = trim(getSetting("email_from"), "");
+$emailNoReply = "no-reply@example.com";
 $url = getSetting("index_url");
 
 foreach (preg_split('/\s*,\s*/s', $emails) as $email) {
@@ -49,11 +51,12 @@ foreach (preg_split('/\s*,\s*/s', $emails) as $email) {
     if (!$email) continue;
 	ob_start();
 	template(
-		"mail", 
+		"mail",
 		array(
 			"title" => ($name? $name . ": " : "") . $SELECT_PERIODS[$period] . " stats: " . preg_replace('/\s+/s', ' ', $firstCaption['caption']) . " [" . date("Y-m-d", $firstCaption['to']) . "]",
 			"to" => $email,
-			"replyto" => ($replyto? $replyto : "no-reply@example.com"),
+			"replyto" => ($replyTo? $replyTo : ($from? $from : $emailNoReply)),
+			"from" => ($emailFrom? $emailFrom : ($replyTo? $replyTo : $emailNoReply)),
 			"url" => $url . "?to=" . date("Y-m-d", $to) . "&period=" . $period,
 			"htmlTable" => $html
 		),

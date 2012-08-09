@@ -1,4 +1,5 @@
-From: DBStat <?="<$replyto>\n"?>
+From: DBStat <?="<$from>\n"?>
+Reply-To: <?="<$replyto>\n"?>
 To: <?="<" . trim($to) . ">\n"?>
 Subject: <?="$title\n"?>
 Content-Type: text/html; charset=UTF-8
