@@ -1,6 +1,6 @@
 <?php
-require_once "config.php";
 chdir(dirname(__FILE__));
+require_once "config.php";
 require_once "lib/config.php";
 require_once "HTML/FormPersister.php";
 require_once "Mail/Simple.php";
