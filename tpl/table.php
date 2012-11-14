@@ -1,15 +1,6 @@
 <?$COLORS = array("holiday" => "red", "incomplete" => "#BBBBBB")?>
 <?$hideCommonPrefix = getSetting('hide_common_prefix', 0)?>
 
-<?if ($tagsSubmenu && !isCgi()) {?>
-	<div style="margin-bottom:3px">
-		Tags:&nbsp;&nbsp;
-		<?foreach ($tagsSubmenu as $url => $info) {?>
-			<a href="<?=$base . $url?>"><?=$info['title']?></a><sup style="color:gray"><?=$info['count']?></sup>&nbsp;&nbsp;
-		<?}?>
-	</div>
-<?}?>
-
 <table cellpadding="3" cellspacing="1" border="0" bgcolor="#CCCCCC">
 <thead bgcolor="#F5F5F5">
 	<tr align="center" valign="top">
