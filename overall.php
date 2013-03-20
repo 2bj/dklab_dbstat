@@ -294,8 +294,8 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 		if ($cell['data_id']) {
 			$uniq = Tools_TimeSeriesAxis::getUniqForTime($cell['created'], $meta);
 			if (!isset($names[$name][$uniq])) {
-				$value = preg_replace('/[^-\d.]+/', '', $cell['value']);
-				$relativeValue = preg_replace('/[^-\d.]+/', '', $cell['relative_value']);
+				$value = extractNumeric($cell['value']);
+				$relativeValue = extractNumeric($cell['relative_value']);
 				$cell['percent'] = (is_numeric($relativeValue) && $relativeValue? _roundPercent($value / $relativeValue * 100) : null);
 				$names[$name][$uniq] = $cell;
 			}
@@ -315,8 +315,8 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 	    $cell = null;
 	    foreach ($cells as $k => $nextCell) {
 		    if ($cell && $cell['relative_to'] < 0 && $cell['relative_to'] <= $periodIndex) {
-		        $curVal = preg_replace('/[^-\d.]+/', '', $cell['value']);
-		        $relVal = preg_replace('/[^-\d.]+/', '', $nextCell['value']);
+		        $curVal = extractNumeric($cell['value']);
+		        $relVal = extractNumeric($nextCell['value']);
 		        $delta = abs($relVal) > 0.0000001? ($curVal - $relVal) / $relVal * 100 : '';
 		        $delta = _roundPercent($delta);
 		        $cell['percent'] = $delta < 0? $delta : '+' . $delta;
@@ -389,7 +389,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 					$rr['total'] = $cell['total'];
 				}
 				if ($cell['is_complete'] && strlen($cell['value'])) {
-					$rr['average'] += $cell['value'];
+					$rr['average'] += extractNumeric($cell['value']);
 					$rr['average_filled']++;
 				}
 				if ($cell['relative_name']) {
@@ -942,4 +942,9 @@ function makeCommonPrefixTransparent($prev, $cur, $delim, $style)
     } else {
         return $cur;
     }
+}
+
+function extractNumeric($s)
+{
+    return preg_replace('/[^-\d.]+/', '', $s);
 }
