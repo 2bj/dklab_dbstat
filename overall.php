@@ -91,6 +91,19 @@ function createDbConnection()
 
 
 /**
+ * Re-establishes the database connection. This is mostly for long-running
+ * mass recalculations to clean up the connection session (e.g. if we use
+ * PostgreSQL replica, it is good to reconnect time to time).
+ */
+function reconnectDb()
+{
+    global $DB;
+    $DB = null;
+    $DB = createDbConnection();
+}
+
+
+/**
  * Renders a template.
  *
  * @param string $__name

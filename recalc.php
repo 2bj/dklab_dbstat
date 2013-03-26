@@ -35,6 +35,7 @@ foreach ($items as $item) {
 	foreach ($periods as $period => $periodName) {
 		if ($onlyPeriod !== null && $period != $onlyPeriod) continue;
 		try {
+			reconnectDb();
 			recalcItemRow($item['id'], $to, $back, $period);
 		} catch (Exception $e) {
 			// nothing; error is already displayed above
