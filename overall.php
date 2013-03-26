@@ -20,6 +20,7 @@ if (isCgi()) {
 }
 
 session_start();
+$DB_BY_DSN = array();
 $DB = createDbConnection();
 
 // Check credentials.
@@ -91,15 +92,15 @@ function createDbConnection()
 
 
 /**
- * Re-establishes the database connection. This is mostly for long-running
- * mass recalculations to clean up the connection session (e.g. if we use
- * PostgreSQL replica, it is good to reconnect time to time).
+ * Forces all DSN connections to be re-established on the next data query,
+ * This is mostly for long-running mass recalculations to clean up the
+ * connection session (e.g. if we use PostgreSQL replica, it is good to
+ * reconnect time to time).
  */
-function reconnectDb()
+function reconnectDbs()
 {
-    global $DB;
-    $DB = null;
-    $DB = createDbConnection();
+    global $DB_BY_DSN;
+    $DB_BY_DSN = array();
 }
 
 
@@ -698,7 +699,7 @@ function replaceMacrosInSql($sql, $interval)
 
 function recalcItemCell($item, $interval)
 {
-	global $DB;
+	global $DB, $DB_BY_DSN;
 	try {
 		$t0 = microtime(true); // for catch {} block
 		writeLogLine("[" . preg_replace('/\s+/s', ' ', $interval['caption']) . "] \"{$item['name']}\" " . sprintf("%-13s", strtolower($interval['periodCaption']) . "..."));
@@ -713,11 +714,10 @@ function recalcItemCell($item, $interval)
 
 		// Connect to the database with connection pooling.
 		$dsn = $DB->selectCell("SELECT value FROM dsn WHERE id=?", $item['dsn_id']);
-		static $dbs = array();
-		if (!isset($dbs[$dsn])) {
-			$dbs[$dsn] = new PDO_Simple($dsn);
+		if (!isset($DB_BY_DSN[$dsn])) {
+			$DB_BY_DSN[$dsn] = new PDO_Simple($dsn);
 		}
-		$db = $dbs[$dsn];
+		$db = $DB_BY_DSN[$dsn];
 
 		// Run the calculation.
 		$t0 = microtime(true); // refresh $t0 excluding connect time
