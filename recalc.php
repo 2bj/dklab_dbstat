@@ -27,6 +27,7 @@ if (isCgi()) {
 writeLogLine(($fromId? "Continuing" : "Starting") . " recalculation.\n");
 
 $items = $DB->select("SELECT * FROM item WHERE archived = 0 AND id > ? ORDER BY id", $fromId); // ORDER BY id is IMPORTANT!
+writeLogLine(sprintf("We have %d items left to process.\n\n", count($items)));
 
 $hasError = false;
 $t0 = microtime(true);
@@ -34,6 +35,7 @@ foreach ($items as $item) {
 	foreach ($periods as $period => $periodName) {
 		if ($onlyPeriod !== null && $period != $onlyPeriod) continue;
 		try {
+			reconnectDbs();
 			recalcItemRow($item['id'], $to, $back, $period);
 		} catch (Exception $e) {
 			// nothing; error is already displayed above

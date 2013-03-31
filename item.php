@@ -2,15 +2,15 @@
 // No HTTP GZIP must be here!
 require_once "overall.php";
 
-$PREVIEW_TABLES_COLS = 30;
-
 $tables = null;
 $id = @$_GET['id']? @$_GET['id'] : @$_POST['item']['id'];
+
+$retpath = isset($_GET['retpath'])? $_GET['retpath'] : 'index.php';
 
 if (!empty($_POST['doDelete'])) {
 	$DB->update("DELETE FROM item WHERE id=?", $id);
 	$DB->update("DELETE FROM data WHERE item_id=?", $id);
-	redirect("index.php", "Item deleted.");
+	redirect($retpath, "Item deleted.");
 }
 
 if (!empty($_POST['doClear'])) {
@@ -32,8 +32,8 @@ if (!empty($_POST['doClear'])) {
 			);
  		}
  		if (!empty($_POST['doSave'])) {
- 			$DB->commit();
-	 		redirect("index.php#$id", "Data is saved.");
+			$DB->commit();
+			redirect("{$retpath}#$id", "Data is saved.");
 		} else if (!empty($_POST['doTest']) || !empty($_POST['doRecalc'])) {
 			list ($to, $back, $period) = parseToBackPeriod($_POST);
 			$periods = $period? array($period) : array_keys(getPeriods()); 
@@ -45,7 +45,7 @@ if (!empty($_POST['doClear'])) {
 					recalcItemRow($id, $to, $back, $period);
 					$data = generateTableData($to + 1, $back, $period, $id);
 					$periods = getPeriods();
-					$tables[$periods[$period]] = generateHtmlTableFromData($data);
+					$tables[$periods[$period]] = generateHtmlTableFromData($data, true);
 				}
 				echo $hideLogJs;
 			} catch (Exception $e) {
@@ -95,13 +95,8 @@ if (!$tables && $id) {
 	$to = $DB->selectCell("SELECT MAX(created) FROM data WHERE item_id=?", $id);
 	if (!$to) $to = time();
 	foreach ($SELECT_PERIODS as $period => $periodName) {
-		$data = generateTableData($to, $PREVIEW_TABLES_COLS, $period, $id);
-		foreach ($data['groups'] as $gKey => $gContent) {
-		    foreach ($gContent as $iKey => $iContent) {
-		        $data['groups'][$gKey][$iKey]['archived'] = false;
-		    }
-		}
-		$tables[$periodName] = generateHtmlTableFromData($data);
+		$data = generateTableData($to, PREVIEW_TABLES_COLS, $period, $id);
+		$tables[$periodName] = generateHtmlTableFromData($data, true);
 	}
 }
 

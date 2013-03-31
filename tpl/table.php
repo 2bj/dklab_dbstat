@@ -1,17 +1,10 @@
 <?$COLORS = array("holiday" => "red", "incomplete" => "#BBBBBB")?>
-
-<?if ($tagsSubmenu && !isCgi()) {?>
-	<div style="margin-bottom:3px">
-		Tags:&nbsp;&nbsp;
-		<?foreach ($tagsSubmenu as $url => $info) {?>
-			<a href="<?=$base . $url?>"><?=$info['title']?></a><sup style="color:gray"><?=$info['count']?></sup>&nbsp;&nbsp;
-		<?}?>
-	</div>
-<?}?>
+<?$hideCommonPrefix = getSetting('hide_common_prefix', 0)?>
 
 <table cellpadding="3" cellspacing="1" border="0" bgcolor="#CCCCCC">
 <thead bgcolor="#F5F5F5">
 	<tr align="center" valign="top">
+		<td width="1" align="middle" valign="middle"><b>#</b></td>
 		<td width="1" align="left" valign="middle"><b>Name</b></td>
 		<td width="1" valign="middle"><b>TOT</b></td>
 		<td width="1" valign="middle"><b>AVG</b></td>
@@ -31,19 +24,23 @@
 
 <tbody class="table_data">
 	<?$hasArchived = 0?>
-	<?$i = -1; foreach ($table['groups'] as $groupName => $group) { $i++; ?>
-		<?foreach ($group as $rowName => $row) {?>
+    <?$zebra = array("#FFFFFF", !isCgi()? "FAFAFA" : "#FFFFFF")?>
+	<?$i = -1; $n = 0; $caption = ''?>
+    <?foreach ($table['groups'] as $groupName => $group) { $i++; ?>
+		<?foreach ($group as $rowName => $row) { $n++; ?>
+		    <?$prevCaption = $caption?>
+		    <?$caption = (strlen($groupName)? $groupName . "/" : "") . (strlen($rowName)? $rowName : "&lt;none&gt;")?>
 			<tr 
 				id="<?=$row['item_id']?>"
 				<?=$row['archived']? 'style="display:none" class="archived id' . $row['item_id'] . '"' : ''?> 
 				<?=$row['relative_name']? 'title="Relative to ' . $row['relative_name'] . '"' : ""?> 
-				align="center" valign="middle" bgcolor="#FFFFFF" 
-			>
+				align="center" valign="middle" bgcolor="<?=$zebra[$n % 2]?>">
+        		<td><font color="#AAA"><?=$n?></font></td>
 				<td nowrap="nowrap" align="left">
 					<?if (@$_SERVER['GATEWAY_INTERFACE']) {?>
-						<a href="<?=$base?>item.php?clone=<?=$row['item_id']?>" title="Clone this item"><img src="<?=$base?>static/clone.gif" width="10" height="10" border="0" /></a>&nbsp;
+						<a href="<?=$base?>item.php?clone=<?=$row['item_id']?><?=isCgi()?'&retpath='.urlencode($_SERVER['REQUEST_URI']):''?>" title="Clone this item"><img src="<?=$base?>static/clone.gif" width="10" height="10" border="0" /></a>&nbsp;
 					<?}?>
-					<b><a style="text-decoration:none" href="<?=$base?>item.php?id=<?=$row['item_id']?>"><?=strlen($groupName)? $groupName . "/" : ""?><?=strlen($rowName)? $rowName : "&lt;none&gt;"?></a></b>&nbsp;
+					<b><a style="text-decoration:none" href="<?=$base?>item.php?id=<?=$row['item_id']?><?=isCgi()?'&retpath='.urlencode($_SERVER['REQUEST_URI']):''?>"><?=$hideCommonPrefix? makeCommonPrefixTransparent($prevCaption, $caption, '/', 'color:#f5f5f5') : $caption?></a></b>&nbsp;
 				</td>
 				<td><?=$row['total']?></td>
 				<td><?=$row['average']?></td>
@@ -67,7 +64,7 @@
 						>
 							<?=$cell['value']?>
 							<?if (strlen($cell['percent'])) {?>
-								<font size="-2" color="#A0A0A0"><br/><?=sprintf(($cell['percent'] < 10? '%.1f' : '%d'), $cell['percent'])?>%</font>
+								<font size="-2" color="#A0A0A0"><br/><?=$cell['percent']?>%</font>
 							<?}?>
 						</td>
 					<?} else {?>

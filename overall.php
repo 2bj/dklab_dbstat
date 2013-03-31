@@ -1,6 +1,6 @@
 <?php
-require_once "config.php";
 chdir(dirname(__FILE__));
+require_once "config.php";
 require_once "lib/config.php";
 require_once "HTML/FormPersister.php";
 require_once "Mail/Simple.php";
@@ -8,6 +8,7 @@ require_once "PDO/Simple.php";
 require_once "Tools/TimeSeriesAxis.php";
 
 define("TAGS_SEP", "|");
+define("PREVIEW_TABLES_COLS", 40);
 
 // Initialize environment.
 if (isCgi() && defined("USE_GZIP")) {
@@ -19,6 +20,7 @@ if (isCgi()) {
 }
 
 session_start();
+$DB_BY_DSN = array();
 $DB = createDbConnection();
 
 // Check credentials.
@@ -27,7 +29,12 @@ if (isCgi() && !defined("NO_AUTH")) {
 		$cred = $_POST['auth']['login'] . ":" . $_POST['auth']['pass'];
 		if (getSetting("loginpass") === $cred) {
 			$_SESSION['credentials'] = $cred;
-			selfRedirect();
+			$tag = getSetting('tagafterlogin', "");
+			if (preg_match('{(/|index.php)$}s', $_SERVER['REQUEST_URI']) && $tag) {
+			    redirect("index.php?tag=" . urlencode($tag));
+			} else {
+				selfRedirect();
+			}
 		} else {
 			addMessage("Authentication failed.");
 		}
@@ -81,6 +88,19 @@ function createDbConnection()
 		}
 	}
 	return $DB;
+}
+
+
+/**
+ * Forces all DSN connections to be re-established on the next data query,
+ * This is mostly for long-running mass recalculations to clean up the
+ * connection session (e.g. if we use PostgreSQL replica, it is good to
+ * reconnect time to time).
+ */
+function reconnectDbs()
+{
+    global $DB_BY_DSN;
+    $DB_BY_DSN = array();
 }
 
 
@@ -239,7 +259,8 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 				c.id AS data_id, c.value, c.created, c.name AS data_name,
 				t.value AS total,
 				r.value AS relative_value,
-				ri.name AS relative_name
+				ri.name AS relative_name,
+				item.relative_to AS relative_to
 			FROM
 				item
 				LEFT JOIN data c ON (
@@ -275,7 +296,7 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 	// For each data cell compute its unique date point.
 	$t0 = microtime(true);
 	$names = array();
-	foreach ($cells as $cell) {
+	foreach ($cells as $i => $cell) {
 		$name = $cell['name'];
 		if ($cell['data_name']) {
             // Insert data name at the end of string and berore each ";" (for multi-named items).
@@ -287,7 +308,9 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 		if ($cell['data_id']) {
 			$uniq = Tools_TimeSeriesAxis::getUniqForTime($cell['created'], $meta);
 			if (!isset($names[$name][$uniq])) {
-				$cell['percent'] = (is_numeric($cell['relative_value']) && $cell['relative_value']? ($cell['value'] / $cell['relative_value'] * 100) : null);
+				$value = extractNumeric($cell['value']);
+				$relativeValue = extractNumeric($cell['relative_value']);
+				$cell['percent'] = (is_numeric($relativeValue) && $relativeValue? _roundPercent($value / $relativeValue * 100) : null);
 				$names[$name][$uniq] = $cell;
 			}
 		} else {
@@ -295,6 +318,30 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			$names[$name][""] = $cell;
 		}
 	}
+
+	// Calculate relative percentage.
+	$periodIndex = 0; // -1 - year, -2 - quarter, -3 - month, -4 - week, -5 - day etc.
+	foreach (array_reverse(Tools_TimeSeriesAxis::getPeriodsMetadata()) as $k => $v) {
+	    $periodIndex--;
+	    if ($k == $period) break;
+	}
+	foreach ($names as $name => $cells) {
+	    $cell = null;
+	    foreach ($cells as $k => $nextCell) {
+		    if ($cell && $cell['relative_to'] < 0 && $cell['relative_to'] <= $periodIndex) {
+		        $curVal = extractNumeric($cell['value']);
+		        $relVal = extractNumeric($nextCell['value']);
+		        $delta = abs($relVal) > 0.0000001? ($curVal - $relVal) / $relVal * 100 : '';
+		        $delta = _roundPercent($delta);
+		        $cell['percent'] = $delta < 0? $delta : '+' . $delta;
+		        $cell['relative_name'] = 'previous period value';
+		    }
+		    $cell =& $names[$name][$k];
+	    }
+	    unset($cell); // very important, because is ref!
+	}
+//	printr($names,1);
+
 //	echo sprintf("Split by uniq intervals took %d ms<br>", (microtime(true) - $t0) * 1000);
 
 	// Expand multi-place names.
@@ -331,8 +378,8 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 			$group = $m[1];
 			$name = $m[2];
 		}
-		$group = preg_replace('/^(\W*)\d+(\D+)/s', '$1$2', $group);
-		$name = preg_replace('/^(\W*)\d+(\D+)/s', '$1$2', $name);
+		$group = preg_replace('{(^|/)\d+}s', '$1', $group);
+		$name  = preg_replace('{(^|/)\d+}s', '$1', $name);
 		$cell = current($cells);
 		$table[$group][$name] = array(
 			"total"         => false,
@@ -356,10 +403,12 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 					$rr['total'] = $cell['total'];
 				}
 				if ($cell['is_complete'] && strlen($cell['value'])) {
-					$rr['average'] += $cell['value'];
+					$rr['average'] += extractNumeric($cell['value']);
 					$rr['average_filled']++;
 				}
-				$rr['relative_name'] = $cell['relative_name'];
+				if ($cell['relative_name']) {
+					$rr['relative_name'] = $cell['relative_name'];
+				}
 				$rr['item_id'] = $cell['item_id'];
 				$rr['cells'][$uniq] = $cell;
 				if ($i == 0) {
@@ -409,6 +458,13 @@ function generateTableData($to, $back, $period, $onlyItemIds = null, $onlyDataNa
 	);
 }
 
+
+function _roundPercent($p)
+{
+    return sprintf(($p < 10? '%.1f' : '%d'), $p);
+}
+
+
 function _sortFetchedData($a, $b)
 {
     $c = strcmp($a['name'], $b['name']);
@@ -425,8 +481,15 @@ function _sortFetchedData($a, $b)
  * @param array $table
  * @return string
  */
-function generateHtmlTableFromData($table)
+function generateHtmlTableFromData($table, $showArchived = false)
 {
+    if ($showArchived) {
+		foreach ($table['groups'] as $gKey => $gContent) {
+			foreach ($gContent as $iKey => $iContent) {
+				$table['groups'][$gKey][$iKey]['archived'] = false;
+			}
+		}
+	}
 	$period = null;
 	if ($table['captions']) {
 		$firstInterval = current($table['captions']);
@@ -446,6 +509,68 @@ function generateHtmlTableFromData($table)
 	$html = preg_replace('/\s*>\s*/s', '>', $html);
 	$html = preg_replace('/\s*<\s*/s', '<', $html);
 	return $html;
+}
+
+
+function csvQuote($s)
+{
+    return '"' . str_replace('"', '""', $s) . '"';
+}
+
+
+function getSettingCsvSep()
+{
+    $sep = getSetting("csv_sep", ";");
+    if ($sep === "tab") $sep = "\t";
+    return $sep;
+}
+
+
+function generateCsvTableFromData($data)
+{
+    //printr($data,1);
+    $lines = array();
+    $lastColWithData = -1;
+
+    // Build caption line (order is reversed).
+    $header = array();
+    foreach ($data['captions'] as $cap) {
+        if (!$cap['is_complete']) continue;
+        $header[] = trim(preg_replace('/\s+/s', ' ', $cap['caption']));
+    }
+    $lines['Title'] = $header;
+
+    // Build rows (order of cols is reversed).
+    foreach ($data['groups'] as $gname => $rows) {
+        foreach ($rows as $iname => $row) {
+            $cells = array();
+            $i = 0;
+            foreach ($data['captions'] as $uniq => $cap) {
+                if (!$cap['is_complete']) continue;
+                $cell = $row["cells"][$uniq];
+                $value = $cell? $cell['value'] : '';
+                $cells[] = $value;
+                if (strlen($value)) {
+                    $lastColWithData = max($lastColWithData, $i);
+                }
+                $i++;
+            }
+            $lines[$iname] = $cells;
+        }
+    }
+
+    // Build CSV lines.
+    $sep = getSettingCsvSep();
+    foreach ($lines as $title => $row) {
+        $row = array_slice($row, 0, $lastColWithData + 1); // remain only non-empty cols
+        $row = array_reverse($row); // set direct time order
+        $row = array_merge(array($title), $row); // add left caption column
+        $row = array_map('csvQuote', $row);
+        $lines[$title] = join($sep, $row);
+    }
+
+    // Return data with BOM to support UTF-8 in Excel.
+    return "\xEF\xBB\xBF" . join("\r\n", $lines);
 }
 
 
@@ -574,7 +699,7 @@ function replaceMacrosInSql($sql, $interval)
 
 function recalcItemCell($item, $interval)
 {
-	global $DB;
+	global $DB, $DB_BY_DSN;
 	try {
 		$t0 = microtime(true); // for catch {} block
 		writeLogLine("[" . preg_replace('/\s+/s', ' ', $interval['caption']) . "] \"{$item['name']}\" " . sprintf("%-13s", strtolower($interval['periodCaption']) . "..."));
@@ -589,11 +714,10 @@ function recalcItemCell($item, $interval)
 
 		// Connect to the database with connection pooling.
 		$dsn = $DB->selectCell("SELECT value FROM dsn WHERE id=?", $item['dsn_id']);
-		static $dbs = array();
-		if (!isset($dbs[$dsn])) {
-			$dbs[$dsn] = new PDO_Simple($dsn);
+		if (!isset($DB_BY_DSN[$dsn])) {
+			$DB_BY_DSN[$dsn] = new PDO_Simple($dsn);
 		}
-		$db = $dbs[$dsn];
+		$db = $DB_BY_DSN[$dsn];
 
 		// Run the calculation.
 		$t0 = microtime(true); // refresh $t0 excluding connect time
@@ -791,4 +915,49 @@ function isCurUrl($url, $isTopLevel)
 	} else {
 		return basename($curUri) == basename($url);
 	}
+}
+
+function glueUrl($a, $b)
+{
+    if (!strlen($a)) return $b;
+    return $a . (false === strpos($a, '?')? '?' : '&') . $b;
+}
+
+function glueQs($a, $b)
+{
+    if (!strlen($a)) return $b;
+    if (!strlen($b)) return $a;
+    return $a . "&" . $b;
+}
+
+function error_get_last_msg()
+{
+    $e = error_get_last();
+    return $e? strip_tags($e['message']) : null;
+}
+
+function generateTableDataFromGetArgs($to, $back, $period)
+{
+    return generateTableData($to, $back, $period, @$_GET['tag'], null, @$_GET['re']);
+}
+
+function makeCommonPrefixTransparent($prev, $cur, $delim, $style)
+{
+    $pCommon = 0;
+    for ($p = -1;;) {
+        $p = strpos($prev, $delim, $p + 1);
+        if ($p === false) break;
+        if (substr($prev, 0, $p + 1) !== substr($cur, 0, $p + 1)) break;
+        $pCommon = $p;
+    }
+    if ($pCommon) {
+        return "<span style=\"$style\">" . substr($cur, 0, $pCommon) . "</span>" . substr($cur, $pCommon);
+    } else {
+        return $cur;
+    }
+}
+
+function extractNumeric($s)
+{
+    return preg_replace('/[^-\d.]+/', '', $s);
 }

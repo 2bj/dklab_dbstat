@@ -1,3 +1,4 @@
+# For Apache & default sqlite.
 <FilesMatch \.sqlite>
 Deny from all
 </FilesMatch>

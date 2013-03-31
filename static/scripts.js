@@ -98,7 +98,7 @@ function showGraph(trs, x, xl, yTop, yBottom, w, h) {
 	var data = new google.visualization.DataTable();
 	data.addColumn('string', 'Date');
 	$.each(trs, function(i) {
-        data.addColumn('number', $(this).children('td:first').text());
+        data.addColumn('number', $(this).children('td:eq(1)').text());
 	})
     data.addRows(values.data.length);
     $.each(values.data, function(i) {

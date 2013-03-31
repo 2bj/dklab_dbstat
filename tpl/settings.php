@@ -17,11 +17,23 @@
 	<td><input type="text" name="settings[emails]" size="50"/></td>
 	<td class="comment">Comma-delimited.</td>
 	</tr>
+
+	<tr valign="top">
+	<td align="right" class="caption">E-mails to send monthly stats</td>
+	<td><input type="text" name="settings[emails_month]" size="50"/></td>
+	<td class="comment">Comma-delimited.</td>
+	</tr>
 	
 	<tr valign="top">
 	<td align="right" class="caption">Reply-To E-mail</td>
 	<td><input type="text" name="settings[replyto]" size="50"/></td>
 	<td></td>
+	</tr>
+
+	<tr valign="top">
+	<td align="right" class="caption">E-mail for "From" header</td>
+	<td><input type="text" name="settings[email_from]" size="50"/></td>
+	<td class="comment">Sometimes it is required to work-around spam filters.</td>
 	</tr>
 
 	<tr valign="top">
@@ -46,6 +58,31 @@
 	<td align="right" class="caption">API access keys</td>
 	<td><input type="text" name="settings[apikeys]" size="50"/></td>
 	<td class="comment">Used to restrict access to API; space-delimited.</td>
+	</tr>
+
+	<tr valign="top">
+	<td align="right" class="caption">Go to this tag after login</td>
+	<td><input type="text" name="settings[tagafterlogin]" size="50"/></td>
+	<td class="comment">If set, only items tagged with such tag are shown after login.</td>
+	</tr>
+
+	<tr valign="top">
+	<td align="right" class="caption">Fields separator for CSV export</td>
+	<td><select name="settings[csv_sep]">
+	    <option value=";">Semicolon (;)</option>
+	    <option value=",">Comma (,)</option>
+	    <option value="tab">Tab (\t)</option>
+	</select></td>
+	<td class="comment"></td>
+	</tr>
+
+	<tr valign="top">
+	<td align="right" class="caption">Hide common prefixes of items</td>
+	<td><select name="settings[hide_common_prefix]">
+	    <option value="0">No</option>
+	    <option value="1">Yes</option>
+	</select></td>
+	<td class="comment"></td>
 	</tr>
 
 	<tr valign="top">
