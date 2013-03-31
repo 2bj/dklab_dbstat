@@ -26,7 +26,7 @@ if (isCgi()) {
 }
 writeLogLine(($fromId? "Continuing" : "Starting") . " recalculation.\n");
 
-$items = $DB->select("SELECT * FROM item WHERE id > ? ORDER BY id", $fromId); // ORDER BY id is IMPORTANT!
+$items = $DB->select("SELECT * FROM item WHERE archived = 0 AND id > ? ORDER BY id", $fromId); // ORDER BY id is IMPORTANT!
 
 $hasError = false;
 $t0 = microtime(true);

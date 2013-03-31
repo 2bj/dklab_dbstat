@@ -61,7 +61,7 @@
 			<div style="float:right; text-align:right">
 				<input type="hidden" name="item[archived]" value="0" />
 				<input type="checkbox" id="archived" name="item[archived]" value="1" default="0" />
-				<label for="archived">Archived (hidden, but calculated)</label><br/>
+				<label for="archived">Archived</label><br/>
 				<input type="submit" name="doTest" value="Test" /> or
 				<input type="submit" name="doRecalc" value="Recalc" />
 				from <input type="text" name="to" size="4" default="now"/> back <input type="text" name="back" size="4" default="14"/>
